@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Package (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            runner: windows-latest
+            packageCommand: package:win
+            unpacked: release/win-unpacked
+            installerPattern: release/AquaWisp-*-win-x64.exe
+            installSmoke: package:smoke-installer
+          - name: macos-x64
+            runner: macos-15-intel
+            packageCommand: package:mac:x64
+            unpacked: release/mac/AquaWisp.app
+            installerPattern: release/AquaWisp-*-mac-x64.dmg
+            installSmoke: package:smoke-dmg
+          - name: macos-arm64
+            runner: macos-15
+            packageCommand: package:mac:arm64
+            unpacked: release/mac-arm64/AquaWisp.app
+            installerPattern: release/AquaWisp-*-mac-arm64.dmg
+            installSmoke: package:smoke-dmg
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify source and evaluations
+        run: |
+          npm run verify
+          npm run evals
+
+      - name: Build native package
+        run: npm run ${{ matrix.packageCommand }}
+
+      - name: Audit unpacked application
+        run: npm run package:audit -- "${{ matrix.unpacked }}"
+
+      - name: Smoke packaged Office runtime
+        run: npm run package:smoke-office -- "${{ matrix.unpacked }}"
+
+      - name: Smoke packaged desktop loop
+        run: npm run package:smoke-desktop -- "${{ matrix.unpacked }}"
+
+      - name: Smoke native installation
+        shell: bash
+        run: npm run ${{ matrix.installSmoke }} -- ${{ matrix.installerPattern }}
+
+      - name: Create SHA-256 checksum
+        shell: bash
+        run: |
+          artifact=$(find release -maxdepth 1 -type f -name 'AquaWisp-*' \( -name '*.exe' -o -name '*.dmg' \) -print -quit)
+          test -n "$artifact"
+          checksum="release/SHA256-${{ matrix.name }}.txt"
+          if command -v shasum >/dev/null 2>&1; then
+            shasum -a 256 "$artifact" > "$checksum"
+          else
+            sha256sum "$artifact" > "$checksum"
+          fi
+
+      - name: Upload native artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: aquawisp-${{ matrix.name }}
+          path: |
+            ${{ matrix.installerPattern }}
+            release/SHA256-${{ matrix.name }}.txt
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: aquawisp-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish immutable tag artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME" artifacts/*
+          --verify-tag
+          --generate-notes
+          --title "AquaWisp $GITHUB_REF_NAME"

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc" lang="zh-CN">
+  <title id="title">AquaWisp 可审计知识工作闭环</title>
+  <desc id="desc">以 AquaWisp 为中心，连接资料采集、结构化处理、本地知识库与检索产出的中文脑图</desc>
+  <rect width="1200" height="460" rx="24" fill="#F7F7F8"/>
+  <path d="M420 120C500 120 505 190 535 205M780 120C700 120 695 190 665 205M420 340C500 340 505 270 535 255M780 340C700 340 695 270 665 255" fill="none" stroke="#0E7490" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="470" cy="141" r="7" fill="#34B3A0"/>
+  <circle cx="730" cy="141" r="7" fill="#34B3A0"/>
+  <circle cx="470" cy="319" r="7" fill="#34B3A0"/>
+  <circle cx="730" cy="319" r="7" fill="#34B3A0"/>
+
+  <g transform="translate(48 48)">
+    <rect width="372" height="144" rx="16" fill="#FFFFFF" stroke="#E8E8EA" stroke-width="2"/>
+    <rect width="10" height="144" rx="5" fill="#0E7490"/>
+    <circle cx="54" cy="47" r="23" fill="#E0F2F7"/>
+    <path d="M42 40H66M42 49H61M46 60C51 55 57 55 62 60" fill="none" stroke="#0E7490" stroke-width="3" stroke-linecap="round"/>
+    <text x="91" y="52" fill="#1F2933" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="600">资料采集</text>
+    <text x="34" y="93" fill="#5F6B76" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="18">内嵌浏览器 · web_fetch · 本地文件</text>
+    <text x="34" y="121" fill="#5F6B76" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="18">协议白名单 · 沙箱 · 来源保留</text>
+  </g>
+
+  <g transform="translate(780 48)">
+    <rect width="372" height="144" rx="16" fill="#FFFFFF" stroke="#E8E8EA" stroke-width="2"/>
+    <rect x="362" width="10" height="144" rx="5" fill="#0E7490"/>
+    <circle cx="54" cy="47" r="23" fill="#E0F2F7"/>
+    <path d="M42 35H66V59H42ZM47 41H61M47 47H59M47 53H63" fill="none" stroke="#0E7490" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="91" y="52" fill="#1F2933" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="600">结构化处理</text>
+    <text x="34" y="93" fill="#5F6B76" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="18">Markdown · HTML · Office 解析</text>
+    <text x="34" y="121" fill="#5F6B76" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="18">文本分段 · SHA-256 去重 · 来源标注</text>
+  </g>
+
+  <g transform="translate(48 268)">
+    <rect width="372" height="144" rx="16" fill="#FFFFFF" stroke="#E8E8EA" stroke-width="2"/>
+    <rect width="10" height="144" rx="5" fill="#34B3A0"/>
+    <circle cx="54" cy="47" r="23" fill="#E0F2F7"/>
+    <ellipse cx="54" cy="38" rx="14" ry="6" fill="none" stroke="#0E7490" stroke-width="3"/>
+    <path d="M40 38V56C40 60 46 63 54 63C62 63 68 60 68 56V38M40 47C40 51 46 54 54 54C62 54 68 51 68 47" fill="none" stroke="#0E7490" stroke-width="3"/>
+    <text x="91" y="52" fill="#1F2933" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="600">本地知识库</text>
+    <text x="34" y="93" fill="#5F6B76" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="18">SQLite 单工作区存储 · WAL</text>
+    <text x="34" y="121" fill="#5F6B76" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="18">FTS5 + sqlite-vec · RRF 混合检索</text>
+  </g>
+
+  <g transform="translate(780 268)">
+    <rect width="372" height="144" rx="16" fill="#FFFFFF" stroke="#E8E8EA" stroke-width="2"/>
+    <rect x="362" width="10" height="144" rx="5" fill="#34B3A0"/>
+    <circle cx="54" cy="47" r="23" fill="#E0F2F7"/>
+    <path d="M42 35H66V59H42Z" fill="none" stroke="#0E7490" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M47 42H61M47 49H61M47 56H56" stroke="#0E7490" stroke-width="3" stroke-linecap="round"/>
+    <path d="M60 57L65 62L73 52" fill="none" stroke="#15803D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="91" y="52" fill="#1F2933" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="600">检索与产出</text>
+    <text x="34" y="93" fill="#5F6B76" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="18">稳定的 kb:// 引用 · 可追溯来源</text>
+    <text x="34" y="121" fill="#5F6B76" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="18">报告 · 文档 · 表格 · 可验证结果</text>
+  </g>
+
+  <g transform="translate(480 180)">
+    <rect width="240" height="100" rx="20" fill="#0E7490"/>
+    <circle cx="45" cy="50" r="27" fill="#34B3A0"/>
+    <path d="M28 53C38 43 47 42 57 47C64 50 71 49 78 43M31 64C41 57 51 56 60 60C66 63 71 62 76 59" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+    <text x="88" y="45" fill="#FFFFFF" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="20" font-weight="600">AquaWisp 沧渡</text>
+    <text x="88" y="72" fill="#E0F2F7" font-family="system-ui, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="17">可审计知识闭环</text>
+  </g>
+</svg>

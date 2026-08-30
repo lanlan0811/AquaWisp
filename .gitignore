@@ -1,0 +1,95 @@
+# Node.js dependencies
+node_modules/
+jspm_packages/
+*.tgz
+
+# TypeScript build output & incremental compile cache
+dist/
+build/
+out/
+release/
+*.tsbuildinfo
+
+# Environment variables, keep example template
+.env
+.env.*
+!.env.example
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Tool cache
+.npm
+.cache/
+.eslintcache
+.stylelintcache
+.parcel-cache
+
+# Test coverage reports
+coverage/
+.nyc_output
+*.lcov
+
+# Yarn PnP related
+.yarn-integrity
+.pnp.*
+.yarn/cache
+
+# VSCode editor config: ignore personal local config, keep shared templates
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains IDE files
+.idea/
+*.iml
+*.iws
+*.swp
+*.swo
+
+# Operating system junk files
+.DS_Store
+Thumbs.db
+
+# PM2 runtime files (for agent deployment)
+.pm2
+ecosystem.config.js
+
+# Temporary files
+*.log
+tmp/
+temp/
+
+# Trae AI
+.trae/
+
+# Harness agent research references (local-only)
+docs/01-harness-agent-foundations.md
+docs/02-harness-agent-architecture.md
+docs/03-harness-agent-loop-and-principles.md
+docs/04-harness-agent-design-and-reliability.md
+docs/05-harness-agent-skills.md
+docs/06-harness-agent-mcp.md
+docs/harness-agent-research/
+docs/ui-design.md
+
+# ZCode runtime & cache files
+.zcode/
+
+.codex/
+
+.workbuddy/
+
+# AquaWisp workspace-local runtime data and encrypted settings
+.aqua/
+
+# AGENTS.md
+AGENTS.md
+
+.design_library/*
