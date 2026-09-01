@@ -9,7 +9,10 @@ for (const packageDirectory of config.workspacePackages) {
   const packageJson = JSON.parse(
     await readFile(resolve(resolveInsideRepository(packageDirectory), "package.json"), "utf8"),
   );
-  const entryPath = resolve(resolveInsideRepository(packageDirectory), packageJson.main);
+  const entryPath = resolve(
+    resolveInsideRepository(packageDirectory),
+    packageJson.smokeEntry ?? packageJson.main,
+  );
   await access(entryPath);
   await import(pathToFileURL(entryPath));
 }

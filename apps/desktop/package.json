@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/main.js",
+  "smokeEntry": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -13,5 +14,11 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "scripts": {
+    "start": "npm run build --workspace @aquawisp/desktop && electron ."
+  },
+  "devDependencies": {
+    "electron": "^44.1.0"
+  }
 }
