@@ -210,7 +210,7 @@
       "inputModalities": ["text"],
       "reasoning": {
         "defaultLevel": "high",
-        "aliases": { "medium": "high", "xhigh": "high" },
+        "aliases": { "medium": "high", "xhigh": "max" },
         "levels": [
           {
             "id": "low",
@@ -274,7 +274,7 @@
       "inputModalities": ["text"],
       "reasoning": {
         "defaultLevel": "high",
-        "aliases": { "medium": "high", "xhigh": "high" },
+        "aliases": { "medium": "high", "xhigh": "max" },
         "levels": [
           {
             "id": "low",
@@ -338,7 +338,7 @@
       "inputModalities": ["text", "image"],
       "reasoning": {
         "defaultLevel": "high",
-        "aliases": { "medium": "high", "xhigh": "high" },
+        "aliases": { "medium": "high", "xhigh": "max" },
         "levels": [
           {
             "id": "low",

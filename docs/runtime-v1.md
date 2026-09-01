@@ -33,10 +33,15 @@ Every event has an ID, Run ID, per-Run sequence, ISO timestamp, trace ID, parent
 
 - Run creation, stage entry, completion, failure, and cancellation;
 - model text deltas and structured decisions;
+- per-session reasoning-effort changes, including normalized model revision and previous state;
 - action planning, authorization, dispatch, observation, verification, and unknown state;
 - structured approval requests.
 
 The event callback receives only committed events. Observer failures cannot roll back the authoritative SQLite transaction.
+
+## Session reasoning state
+
+`SessionReasoningRegistry` resolves a selected effort through the model catalog before persisting `session.reasoning_effort.updated`. The event records the requested and canonical levels, protocol, provider/model identity, SHA-256 model revision, and the preceding state. Equivalent aliases do not create a duplicate event. A new registry instance restores the most recent state by querying all Runs in the session, so the choice survives runtime restart.
 
 ## Persistence and replay
 
@@ -58,4 +63,4 @@ These adapters are test infrastructure, not a security policy or production tool
 
 ## Current boundary
 
-M1 persists `waiting_approval` but does not yet resume an approved action. Real model streaming, provider interruption recovery, context compaction, risk policies, tool reconciliation, and desktop IPC belong to later milestones and are not represented as shipped features.
+M1 persists `waiting_approval` but does not yet resume an approved action. Provider interruption recovery, risk policies, tool reconciliation, and desktop IPC belong to later milestones and are not represented as shipped features.

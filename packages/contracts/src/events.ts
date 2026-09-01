@@ -63,6 +63,30 @@ export const runEventSchema = z.discriminatedUnion("type", [
   ),
   eventSchema("approval.required", z.object({ request: approvalRequestSchema }).strict()),
   eventSchema(
+    "session.reasoning_effort.updated",
+    z
+      .object({
+        sessionId: entityIdSchema,
+        providerId: entityIdSchema,
+        modelId: entityIdSchema,
+        protocol: z.enum(["chat_completions", "responses"]),
+        requestedLevel: z.string().min(1),
+        canonicalLevel: z.string().min(1),
+        modelRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+        previous: z
+          .object({
+            providerId: entityIdSchema,
+            modelId: entityIdSchema,
+            protocol: z.enum(["chat_completions", "responses"]),
+            canonicalLevel: z.string().min(1),
+            modelRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+          })
+          .strict()
+          .nullable(),
+      })
+      .strict(),
+  ),
+  eventSchema(
     "context.compacted",
     z
       .object({

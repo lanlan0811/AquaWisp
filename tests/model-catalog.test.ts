@@ -29,11 +29,13 @@ describe("M2 built-in model catalog", () => {
   it("resolves provider-specific reasoning aliases to declared patches", () => {
     const glm = resolveReasoningLevel(getBuiltInModel("glm-5.3"), "xhigh");
     const deepseek = resolveReasoningLevel(getBuiltInModel("deepseek-v4-pro"), "medium");
+    const deepseekXhigh = resolveReasoningLevel(getBuiltInModel("deepseek-v4-pro"), "xhigh");
     const qwen = resolveReasoningLevel(getBuiltInModel("qwen3.8-max"), "max");
 
     expect(glm.id).toBe("max");
     expect(glm.protocolPatches.responses?.set["reasoning.effort"]).toBe("max");
     expect(deepseek.id).toBe("high");
+    expect(deepseekXhigh.id).toBe("max");
     expect(deepseek.protocolPatches.chat_completions?.unset).toContain("temperature");
     expect(qwen.id).toBe("xhigh");
     expect(qwen.protocolPatches.chat_completions?.unset).toContain("thinking_budget");

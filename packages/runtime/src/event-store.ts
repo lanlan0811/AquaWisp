@@ -371,18 +371,19 @@ export class SqliteEventStore {
     const rows = this.#database
       .prepare("SELECT * FROM events WHERE run_id = ? ORDER BY sequence ASC")
       .all(runId) as unknown as JsonEventRow[];
-    return rows.map((row) =>
-      runEventSchema.parse({
-        eventId: row.event_id,
-        runId: row.run_id,
-        sequence: row.sequence,
-        timestamp: row.timestamp,
-        traceId: row.trace_id,
-        parentEventId: row.parent_event_id,
-        type: row.type,
-        payload: JSON.parse(row.payload_json) as unknown,
-      }),
-    );
+    return rows.map((row) => parseJsonEventRow(row));
+  }
+
+  listEventsForSession(sessionId: string): readonly RunEvent[] {
+    const rows = this.#database
+      .prepare(
+        `SELECT events.* FROM events
+         INNER JOIN runs ON runs.run_id = events.run_id
+         WHERE runs.session_id = ?
+         ORDER BY runs.created_at ASC, events.sequence ASC`,
+      )
+      .all(sessionId) as unknown as JsonEventRow[];
+    return rows.map(parseJsonEventRow);
   }
 
   listActions(runId: string): readonly ActionRecord[] {
@@ -575,4 +576,17 @@ function actionStateForEvent(type: RunEventType): ActionState | undefined {
     "action.unknown": "unknown",
   };
   return states[type];
+}
+
+function parseJsonEventRow(row: JsonEventRow): RunEvent {
+  return runEventSchema.parse({
+    eventId: row.event_id,
+    runId: row.run_id,
+    sequence: row.sequence,
+    timestamp: row.timestamp,
+    traceId: row.trace_id,
+    parentEventId: row.parent_event_id,
+    type: row.type,
+    payload: JSON.parse(row.payload_json) as unknown,
+  });
 }

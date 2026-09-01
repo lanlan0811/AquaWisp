@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "@aquawisp/context": "0.0.0",
-    "@aquawisp/contracts": "0.0.0"
+    "@aquawisp/contracts": "0.0.0",
+    "@aquawisp/model": "0.0.0"
   }
 }
