@@ -28,6 +28,14 @@ export interface KnowledgeBaseStatus {
   readonly documentCount: number;
   readonly chunkCount: number;
 }
+export interface KnowledgeDocumentSummary {
+  readonly id: string;
+  readonly uri: string;
+  readonly title: string;
+  readonly sourceType: "file" | "web" | "manual";
+  readonly tags: readonly string[];
+  readonly updatedAt: string;
+}
 
 const schema = `
 PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;
@@ -117,6 +125,30 @@ export class KnowledgeBase {
       count: number;
     };
     return { documentCount: documents.count, chunkCount: chunks.count };
+  }
+  list(limit: number): readonly KnowledgeDocumentSummary[] {
+    if (!Number.isInteger(limit) || limit <= 0)
+      throw new Error("Knowledge list limit must be a positive integer");
+    const rows = this.#database
+      .prepare(
+        "SELECT id, uri, title, source_type, tags_json, updated_at FROM documents ORDER BY updated_at DESC, id ASC LIMIT ?",
+      )
+      .all(limit) as unknown as Array<{
+      id: string;
+      uri: string;
+      title: string;
+      source_type: "file" | "web" | "manual";
+      tags_json: string;
+      updated_at: string;
+    }>;
+    return rows.map((row) => ({
+      id: row.id,
+      uri: row.uri,
+      title: row.title,
+      sourceType: row.source_type,
+      tags: JSON.parse(row.tags_json) as string[],
+      updatedAt: row.updated_at,
+    }));
   }
   #transaction<T>(operation: () => T): T {
     this.#database.exec("BEGIN IMMEDIATE");

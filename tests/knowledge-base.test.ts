@@ -32,6 +32,9 @@ describe("M4 knowledge base FTS", () => {
     const results = kb.search("中文检索", 10);
     expect(results[0]).toMatchObject({ documentId: "document-1", title: "笔记" });
     expect(kb.status()).toMatchObject({ documentCount: 1 });
+    expect(kb.list(10)).toEqual([
+      expect.objectContaining({ id: "document-1", uri: "file://notes.md", tags: ["中文"] }),
+    ]);
     kb.close();
   });
 });
