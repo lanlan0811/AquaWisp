@@ -3,6 +3,9 @@ name: CI
 on:
   push:
     branches: [master]
+
+permissions:
+  contents: read
   pull_request:
     branches: [master]
 
@@ -11,7 +14,7 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v3
@@ -26,7 +29,7 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7
@@ -37,25 +40,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Compile prompt resources (drift check)
-        run: |
-          npm run prompts
-          git diff --exit-code -- packages/runtime/src/prompts/prompts.generated.ts
-
-      - name: Build (typecheck + emit)
-        run: npm run build
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Test
-        run: npm run test
-
-      - name: Architecture check
-        run: npm run arch
+      - name: Verify source
+        run: npm run verify
 
       - name: Smoke
         run: npm run smoke
-
-      - name: M8 evaluation suite
-        run: npm run evals

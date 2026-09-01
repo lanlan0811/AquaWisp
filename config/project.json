@@ -1,0 +1,43 @@
+{
+  "$schema": "./project.schema.json",
+  "schemaVersion": 1,
+  "projectName": "AquaWisp",
+  "packageNamePrefix": "@aquawisp/",
+  "packageScopes": ["apps", "packages"],
+  "workspacePackages": [
+    "apps/desktop",
+    "packages/contracts",
+    "packages/runtime",
+    "packages/model",
+    "packages/models-catalog",
+    "packages/tools",
+    "packages/kb",
+    "packages/browser",
+    "packages/skills",
+    "packages/context"
+  ],
+  "prompts": {
+    "sourceDirectory": "docs/prompts",
+    "outputFile": "packages/runtime/resources/prompts/bundle.json",
+    "sources": [
+      "system-core.md",
+      "tools-guide.md",
+      "skills-guide.md",
+      "safety.md",
+      "kb-guide.md",
+      "browser-guide.md",
+      "office-guide.md"
+    ]
+  },
+  "architecture": {
+    "sourceDirectories": ["apps", "packages"],
+    "rendererSourceDirectory": "apps/desktop/src/renderer",
+    "forbiddenRendererImports": [
+      "node:child_process",
+      "node:fs",
+      "node:fs/promises",
+      "node:net",
+      "node:tls"
+    ]
+  }
+}

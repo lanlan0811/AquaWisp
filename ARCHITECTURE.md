@@ -1,0 +1,79 @@
+# AquaWisp Architecture
+
+This document records the public architecture of AquaWisp `0.1.0`. The implementation follows the milestone order in [ROADMAP.md](ROADMAP.md); sections describing later milestones are target architecture until their milestone is complete.
+
+## Design goals
+
+- Keep authoritative run state outside the desktop renderer.
+- Make every side effect controllable, recoverable, verifiable, and auditable.
+- Keep provider, tool, path, policy, and UI behavior configuration-driven.
+- Treat Windows 10+ and macOS as equal targets.
+- Preserve a local-first, single-workspace data boundary.
+
+## Process model
+
+```text
+Electron desktop (apps/desktop)
+  renderer: conversation, knowledge base, browser supervision, approvals, settings
+  preload: narrow, versioned IPC surface
+  main: windows, safeStorage, browser host, runtime supervision
+                         │ local IPC / stdio
+                         ▼
+Independent runtime (packages/runtime)
+  state machine, ledger, authorization, tools, skills, knowledge base,
+  context management, event store, checkpoints
+```
+
+The renderer never accesses the file system, model providers, secrets, or child processes directly. The preload surface validates messages against `packages/contracts`. The runtime owns Run state, so a desktop crash cannot silently rewrite the execution history.
+
+## Agent lifecycle
+
+Every turn is modeled as six explicit stages:
+
+1. `prepare` loads workspace state, skills, knowledge-base summary, browser context, and unfinished actions.
+2. `reason` asks the selected model for the next action or a final answer.
+3. `authorize` evaluates mode, policy, risk, workspace boundaries, and session approvals.
+4. `execute` dispatches only authorized actions.
+5. `observe` records structured, untrusted tool results.
+6. `verify` independently checks whether the expected effect occurred.
+
+Side-effect actions advance through `planned → authorized → dispatched → observed → verified`. A dispatched action without a reliable result becomes `unknown`; recovery reconciles its actual state before any retry.
+
+## Packages and dependency direction
+
+| Package          | Responsibility                                         | Intended dependencies                          |
+| ---------------- | ------------------------------------------------------ | ---------------------------------------------- |
+| `contracts`      | Versioned schemas and shared protocol types            | schema library only                            |
+| `models-catalog` | Provider and model capability data                     | `contracts`                                    |
+| `model`          | Streaming protocol clients and reasoning normalization | `contracts`, `models-catalog`                  |
+| `context`        | Token budgets, compaction, checkpoints                 | `contracts`, `model` abstractions              |
+| `kb`             | SQLite storage, ingestion, hybrid retrieval            | `contracts`                                    |
+| `tools`          | Sandboxed tools and verification adapters              | `contracts`, `kb`                              |
+| `browser`        | Runtime-side browser command bridge                    | `contracts`                                    |
+| `skills`         | Progressive `SKILL.md` discovery and loading           | `contracts`, `tools` execution interface       |
+| `runtime`        | Orchestration and authoritative state                  | all runtime packages through public interfaces |
+| `desktop`        | Electron UI and host adapters                          | `contracts` only across the process boundary   |
+
+Cross-package imports use package public exports. Runtime code must not import renderer code. Renderer code must not import Node file-system, process-control, or network modules. The automated architecture check begins enforcing these boundaries in M0 and grows with each milestone.
+
+## Persistence and secrets
+
+Workspace-local state lives under `.aqua/`, which is ignored by Git. The target event store and knowledge base use SQLite WAL mode. Model API keys are encrypted by Electron `safeStorage` using Windows DPAPI or macOS Keychain; the runtime requests secrets through controlled IPC and does not persist plaintext keys.
+
+## Configuration
+
+Bootstrap paths, workspace packages, prompt sources, policy tables, model capabilities, command surfaces, and UI registries are configuration data rather than scattered constants. New registries must be documented in [docs/config-registry.md](docs/config-registry.md) and validated at load time.
+
+## UI boundary
+
+The desktop UI follows the AquaWisp design system: Chinese-first copy, tokenized light/dark themes, system font fallbacks, SVG-only icons, reduced-motion support, and ledger states communicated by icon plus text rather than color alone. UI implementation begins at M5, after the runtime and knowledge-base contracts stabilize.
+
+## Verification layers
+
+- Prompt resource hash and drift check
+- Strict TypeScript project references
+- ESLint and formatting checks
+- Unit and integration tests through Vitest
+- Architecture registry and boundary checks
+- Cross-platform build-and-smoke jobs on Windows and macOS
+- Later milestones add deterministic run replay, recorded provider streams, knowledge retrieval evals, and packaged-app checks

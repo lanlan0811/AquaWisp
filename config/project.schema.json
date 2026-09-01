@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aquawisp.dev/schemas/project.schema.json",
+  "title": "AquaWisp project registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "projectName",
+    "packageNamePrefix",
+    "packageScopes",
+    "workspacePackages",
+    "prompts",
+    "architecture"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "projectName": { "type": "string", "minLength": 1 },
+    "packageNamePrefix": { "type": "string", "pattern": "^@[a-z0-9-]+/$" },
+    "packageScopes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "workspacePackages": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^(apps|packages)/[a-z0-9-]+$" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "prompts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceDirectory", "outputFile", "sources"],
+      "properties": {
+        "sourceDirectory": { "type": "string", "minLength": 1 },
+        "outputFile": { "type": "string", "minLength": 1 },
+        "sources": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9-]+\\.md$" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "architecture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceDirectories", "rendererSourceDirectory", "forbiddenRendererImports"],
+      "properties": {
+        "sourceDirectories": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "rendererSourceDirectory": { "type": "string", "minLength": 1 },
+        "forbiddenRendererImports": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

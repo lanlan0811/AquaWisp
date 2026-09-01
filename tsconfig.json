@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "files": [],
+  "references": [
+    { "path": "apps/desktop" },
+    { "path": "packages/contracts" },
+    { "path": "packages/runtime" },
+    { "path": "packages/model" },
+    { "path": "packages/models-catalog" },
+    { "path": "packages/tools" },
+    { "path": "packages/kb" },
+    { "path": "packages/browser" },
+    { "path": "packages/skills" },
+    { "path": "packages/context" },
+    { "path": "tests" }
+  ]
+}

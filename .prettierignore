@@ -1,0 +1,11 @@
+.codex/
+.design_library/
+.git/
+.aqua/
+node_modules/
+dist/
+build/
+coverage/
+skills/
+package-lock.json
+packages/runtime/resources/prompts/bundle.json
