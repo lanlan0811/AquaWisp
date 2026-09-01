@@ -23,6 +23,10 @@
     { "id": "filesystem.write", "revision": "1", "riskLevel": "medium", "sideEffect": true },
     { "id": "filesystem.edit", "revision": "1", "riskLevel": "medium", "sideEffect": true },
     { "id": "terminal.execute", "revision": "1", "riskLevel": "medium", "sideEffect": true },
-    { "id": "web.fetch", "revision": "1", "riskLevel": "low", "sideEffect": false }
+    { "id": "web.fetch", "revision": "1", "riskLevel": "low", "sideEffect": false },
+    { "id": "kb.add", "revision": "1", "riskLevel": "medium", "sideEffect": true },
+    { "id": "kb.search", "revision": "1", "riskLevel": "low", "sideEffect": false },
+    { "id": "kb.list", "revision": "1", "riskLevel": "low", "sideEffect": false },
+    { "id": "kb.status", "revision": "1", "riskLevel": "low", "sideEffect": false }
   ]
 }
