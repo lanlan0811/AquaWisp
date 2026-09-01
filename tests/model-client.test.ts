@@ -1,0 +1,144 @@
+import { ModelStreamInterruptedError, OpenAICompatibleClient } from "@aquawisp/model";
+import { describe, expect, it } from "vitest";
+
+function sseResponse(chunks: readonly string[]): Response {
+  const encoder = new TextEncoder();
+  return new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) {
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      },
+    }),
+    { status: 200, headers: { "content-type": "text/event-stream" } },
+  );
+}
+
+async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
+  const output: T[] = [];
+  for await (const item of iterable) {
+    output.push(item);
+  }
+  return output;
+}
+
+function requestUrl(input: string | URL | Request): string {
+  return typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+}
+
+function requestJsonBody(init?: RequestInit): unknown {
+  if (typeof init?.body !== "string") {
+    throw new Error("Expected a JSON string request body");
+  }
+  return JSON.parse(init.body) as unknown;
+}
+
+describe("M2 OpenAI-compatible streaming client", () => {
+  it("normalizes and parses a Chat Completions stream across chunk boundaries", async () => {
+    let requestedUrl = "";
+    let requestedBody: unknown;
+    const mockFetch: typeof fetch = (input, init) => {
+      requestedUrl = requestUrl(input);
+      requestedBody = requestJsonBody(init);
+      return Promise.resolve(
+        sseResponse([
+          'data: {"choices":[{"delta":{"reasoning_content":"思考"},"finish_reason":null}]}\r',
+          '\n\r\ndata: {"choices":[{"delta":{"content":"完成"},"finish_reason":"stop"}]}\n\n',
+          "data: [DONE]\n\n",
+        ]),
+      );
+    };
+    const client = new OpenAICompatibleClient({
+      apiKey: "test-key",
+      baseUrl: "https://open.bigmodel.cn/api/paas/v4",
+      protocol: "chat_completions",
+      fetchImplementation: mockFetch,
+    });
+
+    const events = await collect(
+      client.stream({ model: "glm-5.3", reasoningLevel: "high", body: { messages: [] } }),
+    );
+
+    expect(requestedUrl).toBe("https://open.bigmodel.cn/api/paas/v4/chat/completions");
+    expect(requestedBody).toMatchObject({
+      model: "glm-5.3",
+      stream: true,
+      thinking: { type: "enabled" },
+      reasoning_effort: "high",
+    });
+    expect(events).toEqual([
+      { kind: "reasoning_delta", delta: "思考", sequence: 0 },
+      { kind: "text_delta", delta: "完成", sequence: 1 },
+      { kind: "completed", finishReason: "stop", sequence: 2 },
+    ]);
+  });
+
+  it("parses semantic Responses API events", async () => {
+    let requestedBody: unknown;
+    const mockFetch: typeof fetch = (_input, init) => {
+      requestedBody = requestJsonBody(init);
+      return Promise.resolve(
+        sseResponse([
+          'event: response.reasoning_text.delta\ndata: {"type":"response.reasoning_text.delta","delta":"R"}\n\n',
+          'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"T"}\n\n',
+          'event: response.completed\ndata: {"type":"response.completed","response":{"usage":{"input_tokens":1,"output_tokens":2}}}\n\n',
+        ]),
+      );
+    };
+    const client = new OpenAICompatibleClient({
+      apiKey: "test-key",
+      baseUrl: "https://api.deepseek.com",
+      protocol: "responses",
+      fetchImplementation: mockFetch,
+    });
+
+    const events = await collect(
+      client.stream({ model: "deepseek-v4-pro", reasoningLevel: "max", body: { input: "x" } }),
+    );
+
+    expect(requestedBody).toMatchObject({
+      model: "deepseek-v4-pro",
+      stream: true,
+      reasoning: { effort: "max" },
+    });
+    expect(events).toEqual([
+      { kind: "reasoning_delta", delta: "R", sequence: 0 },
+      { kind: "text_delta", delta: "T", sequence: 1 },
+      { kind: "usage", usage: { input_tokens: 1, output_tokens: 2 }, sequence: 2 },
+      { kind: "completed", finishReason: "completed", sequence: 3 },
+    ]);
+  });
+
+  it("distinguishes an interrupted stream from protocol completion", async () => {
+    const client = new OpenAICompatibleClient({
+      apiKey: "test-key",
+      baseUrl: "https://api.moonshot.cn/v1",
+      protocol: "chat_completions",
+      fetchImplementation: () =>
+        Promise.resolve(sseResponse(['data: {"choices":[{"delta":{"content":"partial"}}]}\n\n'])),
+    });
+
+    await expect(
+      collect(client.stream({ model: "kimi-k3", body: { messages: [] } })),
+    ).rejects.toMatchObject({
+      name: ModelStreamInterruptedError.name,
+      emittedEvents: 1,
+    });
+  });
+
+  it("returns bounded HTTP error details", async () => {
+    const client = new OpenAICompatibleClient({
+      apiKey: "test-key",
+      baseUrl: "https://api.deepseek.com",
+      protocol: "chat_completions",
+      maximumErrorBodyBytes: 8,
+      fetchImplementation: () => Promise.resolve(new Response("0123456789", { status: 401 })),
+    });
+
+    await expect(
+      collect(client.stream({ model: "deepseek-v4-pro", body: { messages: [] } })),
+    ).rejects.toEqual(expect.objectContaining({ status: 401, responseBody: "01234567" }));
+  });
+});
