@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "chunking": { "maximumCharacters": 1200, "overlapCharacters": 160, "minimumCharacters": 80 },
+  "search": { "defaultLimit": 10, "maximumLimit": 50 }
+}

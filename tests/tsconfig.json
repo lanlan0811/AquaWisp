@@ -12,6 +12,7 @@
     { "path": "../packages/model" },
     { "path": "../packages/models-catalog" },
     { "path": "../packages/runtime" },
+    { "path": "../packages/kb" },
     { "path": "../packages/tools" }
   ]
 }
