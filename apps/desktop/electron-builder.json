@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.aquawisp.desktop",
+  "productName": "沧渡 AquaWisp",
+  "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+  "asar": true,
+  "directories": {
+    "output": "../../release/desktop",
+    "buildResources": "build-resources"
+  },
+  "files": ["dist/**/*.js", "package.json"],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": "always",
+    "createStartMenuShortcut": true
+  },
+  "mac": {
+    "category": "public.app-category.productivity",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ]
+  }
+}

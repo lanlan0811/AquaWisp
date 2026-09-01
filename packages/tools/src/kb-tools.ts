@@ -15,7 +15,9 @@ export interface KnowledgeTools {
 
 export function createKnowledgeTools(knowledgeBase: KnowledgeBase): KnowledgeTools {
   return {
-    add: (document) => knowledgeBase.add(document),
+    add: (document) => {
+      knowledgeBase.add(document);
+    },
     search: (query, limit) => knowledgeBase.search(query, limit),
     list: (limit) => knowledgeBase.list(limit),
     status: () => knowledgeBase.status(),

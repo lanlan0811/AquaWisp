@@ -1,9 +1,6 @@
-import electron from "electron";
-import type { BrowserWindow as BrowserWindowType } from "electron";
+import { app, BrowserWindow, type BrowserWindow as BrowserWindowType } from "electron";
 
 import { createDesktopMarkup, desktopStyles } from "./renderer/ui.js";
-
-const { app, BrowserWindow } = electron as unknown as typeof import("electron");
 
 function createWindow(): BrowserWindowType {
   const window = new BrowserWindow({
@@ -19,14 +16,14 @@ function createWindow(): BrowserWindowType {
   return window;
 }
 
-if (typeof app?.whenReady === "function") {
-  app.whenReady().then(() => {
-    createWindow();
-    app.on("activate", () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow();
-    });
+void app.whenReady().then(() => {
+  createWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
   });
-  app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") app.quit();
-  });
-}
+});
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});

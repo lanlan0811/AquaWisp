@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">沧渡 AquaWisp</title>
+  <desc id="description">青蓝色水滴与渡桥组成的应用图标</desc>
+  <rect width="512" height="512" rx="112" fill="#0E7490"/>
+  <path d="M256 84c-54 78-112 141-112 224 0 69 50 120 112 120s112-51 112-120c0-83-58-146-112-224Z" fill="#E6F5F7"/>
+  <path d="M132 313c69-56 179-56 248 0" fill="none" stroke="#34B3A0" stroke-width="34" stroke-linecap="round"/>
+  <path d="M166 347h180" fill="none" stroke="#0E7490" stroke-width="28" stroke-linecap="round"/>
+</svg>

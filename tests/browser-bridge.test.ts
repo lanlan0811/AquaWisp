@@ -5,9 +5,9 @@ describe("M6 browser command bridge", () => {
   it("validates URL protocols and de-duplicates requests by request ID", async () => {
     let executions = 0;
     const bridge = new BrowserRequestBridge({
-      execute: async () => {
+      execute: () => {
         executions += 1;
-        return "ok";
+        return Promise.resolve("ok");
       },
     });
     const request = {

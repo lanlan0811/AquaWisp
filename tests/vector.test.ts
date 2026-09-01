@@ -14,7 +14,9 @@ describe("M4 vector retrieval", () => {
       "opposite",
     ]);
     expect(cosineSimilarity([1, 0], [0, 1])).toBe(0);
-    expect(() => index.upsert("invalid", [1])).toThrow("dimensions");
+    expect(() => {
+      index.upsert("invalid", [1]);
+    }).toThrow("dimensions");
     index.remove("aligned");
     expect(index.search([1, 0], 2)[0]?.id).toBe("diagonal");
   });

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const browserCommandSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("navigate"), url: z.string().url() }).strict(),
+  z.object({ kind: z.literal("navigate"), url: z.url() }).strict(),
   z.object({ kind: z.literal("back") }).strict(),
   z.object({ kind: z.literal("forward") }).strict(),
   z.object({ kind: z.literal("reload") }).strict(),

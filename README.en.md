@@ -6,7 +6,7 @@ A local-first knowledge-base harness agent for Chinese knowledge workers.
 
 AquaWisp connects research collection, knowledge organization, reliable retrieval, and office-document production in one traceable loop. Its independent runtime, six-stage agent state machine, action ledger, and risk-aware approvals make side effects controllable, recoverable, verifiable, and auditable.
 
-> Status: AquaWisp is under active `0.1.0` development. The M0 repository foundation and M1 replayable runtime skeleton are complete, but there is no usable desktop release yet. Follow the [roadmap](ROADMAP.md) for progress.
+> Status: AquaWisp is under active `0.1.0` development. M0 and M1 have passed milestone acceptance, while M2–M9 have integrated foundations that still require live-provider, browser-host, MCP, signed macOS packaging, and clean-machine acceptance. The current Windows installer is for internal validation only, not a public release. The [roadmap](ROADMAP.md) remains the source of truth for milestone acceptance.
 
 [简体中文](README.md)
 
@@ -47,6 +47,8 @@ npm run smoke
 ```
 
 `npm run verify` checks the prompt bundle, strict TypeScript, lint rules, tests, architecture boundaries, and formatting. `npm run smoke` builds and imports every workspace entry point.
+
+Use `npm run package:desktop:dir` for a current-platform unpacked build, `npm run package:desktop:win` for a Windows NSIS installer, or `npm run package:desktop:mac` for a macOS DMG. See [Desktop packaging and release](docs/packaging.en.md) for signing and clean-machine acceptance requirements.
 
 ## Contributing and security
 

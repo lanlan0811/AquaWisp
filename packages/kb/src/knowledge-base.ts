@@ -100,14 +100,14 @@ export class KnowledgeBase {
       .prepare(
         `SELECT chunks.id AS chunk_id, documents.id AS document_id, documents.uri, documents.title, chunks.content, bm25(chunks_fts) AS score FROM chunks_fts JOIN chunks ON chunks.id = chunks_fts.chunk_id JOIN documents ON documents.id = chunks.document_id WHERE chunks_fts MATCH ? ORDER BY score LIMIT ?`,
       )
-      .all(segmentChineseForFts(query), limit) as unknown as Array<{
+      .all(segmentChineseForFts(query), limit) as unknown as {
       chunk_id: string;
       document_id: string;
       uri: string;
       title: string;
       content: string;
       score: number;
-    }>;
+    }[];
     return rows.map((row) => ({
       chunkId: row.chunk_id,
       documentId: row.document_id,
@@ -133,14 +133,14 @@ export class KnowledgeBase {
       .prepare(
         "SELECT id, uri, title, source_type, tags_json, updated_at FROM documents ORDER BY updated_at DESC, id ASC LIMIT ?",
       )
-      .all(limit) as unknown as Array<{
+      .all(limit) as unknown as {
       id: string;
       uri: string;
       title: string;
       source_type: "file" | "web" | "manual";
       tags_json: string;
       updated_at: string;
-    }>;
+    }[];
     return rows.map((row) => ({
       id: row.id,
       uri: row.uri,

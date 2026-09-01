@@ -1,6 +1,8 @@
 {
   "name": "@aquawisp/desktop",
   "version": "0.0.0",
+  "description": "沧渡 AquaWisp 本地优先知识库智能体桌面端",
+  "author": "AquaWisp Contributors",
   "private": true,
   "type": "module",
   "main": "./dist/main.js",
@@ -16,9 +18,14 @@
     "dist"
   ],
   "scripts": {
-    "start": "npm run build --workspace @aquawisp/desktop && electron ."
+    "build": "tsc -b",
+    "start": "npm run build --workspace @aquawisp/desktop && electron .",
+    "package:dir": "npm run build --workspace @aquawisp/desktop && electron-builder --config electron-builder.json --dir --publish never",
+    "package:win": "npm run build --workspace @aquawisp/desktop && electron-builder --config electron-builder.json --win nsis --publish never",
+    "package:mac": "npm run build --workspace @aquawisp/desktop && electron-builder --config electron-builder.json --mac dmg --publish never"
   },
   "devDependencies": {
-    "electron": "^44.1.0"
+    "electron": "44.1.0",
+    "electron-builder": "26.15.3"
   }
 }

@@ -6,7 +6,7 @@
 
 沧渡把资料采集、知识整理、可靠检索和办公产出连接成一个可追溯闭环。它采用独立 runtime、六阶段 Agent 状态机、动作账本和分级审批，让每一次副作用操作都可控制、可恢复、可验证、可审计。
 
-> 当前状态：项目处于 `0.1.0` 开发期。M0 仓库基建与 M1 可回放 runtime 骨架已经完成，产品功能仍按 [ROADMAP](ROADMAP.md) 逐步实现，暂不提供可用桌面安装包。
+> 当前状态：项目处于 `0.1.0` 开发期。M0 与 M1 已通过里程碑验收，M2–M9 已有持续集成的基础实现，但仍需完成真实模型、浏览器宿主、MCP、macOS 打包签名和双平台干净机器验收。当前 Windows 安装包仅供内部验证，不是正式发布版本。进度以 [ROADMAP](ROADMAP.md) 的验收口径为准。
 
 [English](README.en.md)
 
@@ -64,15 +64,20 @@ npm run smoke
 
 常用命令：
 
-| 命令                   | 用途                                                 |
-| ---------------------- | ---------------------------------------------------- |
-| `npm run prompts`      | 编译 `docs/prompts` 为带 SHA-256 版本的 runtime 资源 |
-| `npm run typecheck`    | 执行 TypeScript strict 项目引用检查                  |
-| `npm run lint`         | 执行 ESLint 严格规则                                 |
-| `npm test`             | 运行 Vitest                                          |
-| `npm run architecture` | 校验工作区注册与进程边界                             |
-| `npm run verify`       | 依次校验 prompts、类型、lint、测试、架构和格式       |
-| `npm run smoke`        | 构建并导入所有工作区入口，验证最小运行链路           |
+| 命令                          | 用途                                                 |
+| ----------------------------- | ---------------------------------------------------- |
+| `npm run prompts`             | 编译 `docs/prompts` 为带 SHA-256 版本的 runtime 资源 |
+| `npm run typecheck`           | 执行 TypeScript strict 项目引用检查                  |
+| `npm run lint`                | 执行 ESLint 严格规则                                 |
+| `npm test`                    | 运行 Vitest                                          |
+| `npm run architecture`        | 校验工作区注册与进程边界                             |
+| `npm run verify`              | 依次校验 prompts、类型、lint、测试、架构和格式       |
+| `npm run smoke`               | 构建并导入所有工作区入口，验证最小运行链路           |
+| `npm run package:desktop:dir` | 生成当前平台的未安装目录包                           |
+| `npm run package:desktop:win` | 在 Windows 生成未签名 NSIS 内部验证包                |
+| `npm run package:desktop:mac` | 在 macOS 生成未签名 DMG 内部验证包                   |
+
+桌面端打包、签名与干净机器验收要求见 [桌面端打包与发布](docs/packaging.md)。
 
 ## 安全与隐私
 
