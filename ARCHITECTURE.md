@@ -45,18 +45,18 @@ The M1 implementation and event catalog are documented in [docs/runtime-v1.md](d
 
 ## Packages and dependency direction
 
-| Package          | Responsibility                                         | Intended dependencies                                        |
-| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------ |
-| `contracts`      | Versioned schemas and shared protocol types            | schema library only                                          |
-| `models-catalog` | Provider and model capability data                     | `contracts`                                                  |
-| `model`          | Streaming protocol clients and reasoning normalization | `contracts`, `models-catalog`                                |
-| `context`        | Token budgets, compaction, checkpoints                 | `contracts`, `model` abstractions                            |
-| `kb`             | SQLite storage, ingestion, hybrid retrieval            | `contracts`                                                  |
-| `tools`          | Sandboxed tools and verification adapters              | `contracts`, `kb`                                            |
-| `browser`        | Runtime-side browser command bridge                    | `contracts`                                                  |
-| `skills`         | Progressive `SKILL.md` discovery and loading           | `contracts`, `tools` execution interface                     |
-| `runtime`        | Orchestration and authoritative state                  | all runtime packages through public interfaces               |
-| `desktop`        | Electron UI and host adapters                          | `contracts`; runtime executable as packaged process resource |
+| Package          | Responsibility                                              | Intended dependencies                                        |
+| ---------------- | ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `contracts`      | Versioned schemas and shared protocol types                 | schema library only                                          |
+| `models-catalog` | Provider and model capability data                          | `contracts`                                                  |
+| `model`          | Streaming protocol clients and reasoning normalization      | `contracts`, `models-catalog`                                |
+| `context`        | Token budgets, compaction, checkpoints                      | `contracts`, `model` abstractions                            |
+| `kb`             | SQLite FTS5/sqlite-vec storage, ingestion, hybrid retrieval | `contracts`                                                  |
+| `tools`          | Sandboxed tools and verification adapters                   | `contracts`, `kb`                                            |
+| `browser`        | Runtime-side browser command bridge                         | `contracts`                                                  |
+| `skills`         | Progressive `SKILL.md` discovery and loading                | `contracts`, `tools` execution interface                     |
+| `runtime`        | Orchestration and authoritative state                       | all runtime packages through public interfaces               |
+| `desktop`        | Electron UI and host adapters                               | `contracts`; runtime executable as packaged process resource |
 
 Cross-package imports use package public exports. Runtime code must not import renderer code. Renderer code must not import Node file-system, process-control, or network modules. The automated architecture check begins enforcing these boundaries in M0 and grows with each milestone.
 
