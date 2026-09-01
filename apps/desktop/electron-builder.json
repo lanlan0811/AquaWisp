@@ -8,7 +8,7 @@
     "output": "../../release/desktop",
     "buildResources": "build-resources"
   },
-  "files": ["dist/**/*.js", "package.json"],
+  "files": ["dist/**/*.js", "dist/**/*.json", "package.json"],
   "win": {
     "target": [
       {

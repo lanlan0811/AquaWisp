@@ -8,6 +8,7 @@ describe("M5 design-system desktop renderer", () => {
       workspaceName: "知识工作区",
       modelName: "GLM-5.3",
       running: true,
+      runtimeStatus: "connected",
     });
 
     expect(markup).toContain("完全访问");

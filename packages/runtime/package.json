@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./process-host": {
+      "types": "./dist/process-host.d.ts",
+      "default": "./dist/process-host.js"
     }
   },
   "files": [

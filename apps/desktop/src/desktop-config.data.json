@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "window": {
+    "width": 1280,
+    "height": 820,
+    "minWidth": 960,
+    "minHeight": 640,
+    "backgroundColor": "#ffffff"
+  },
+  "runtime": {
+    "workingDirectoryName": "runtime",
+    "requestTimeoutMs": 10000,
+    "maxLineBytes": 1048576,
+    "maxStderrBytes": 65536,
+    "runAsNodeEnvironmentVariable": "ELECTRON_RUN_AS_NODE",
+    "inheritedEnvironment": ["PATH", "Path", "SystemRoot", "TMP", "TEMP", "LANG", "LC_ALL"]
+  }
+}

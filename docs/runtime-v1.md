@@ -61,6 +61,8 @@ The M1 simulation adapters provide scripted model signals, monotonic timestamps,
 
 These adapters are test infrastructure, not a security policy or production tool implementation.
 
-## Current boundary
+## Desktop process boundary
 
-M1 persists `waiting_approval` but does not yet resume an approved action. Provider interruption recovery, risk policies, tool reconciliation, and desktop IPC belong to later milestones and are not represented as shipped features.
+M5 adds a strict V1 JSONL RPC envelope in `packages/contracts` plus a stdio process host. Electron main supervises that process, verifies `runtime.ping` before reporting a connected state, and sends `runtime.shutdown` before application exit. Request correlation, protocol version, response size, stderr size, timeout, and inherited environment names are bounded outside the model's control.
+
+The current RPC command surface is intentionally limited to lifecycle health and shutdown. Run streaming, approval resumption, and secret requests will extend the same discriminated contract rather than exposing runtime implementation objects to Electron or renderer code.
