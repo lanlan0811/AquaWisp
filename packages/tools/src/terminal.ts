@@ -75,8 +75,12 @@ export class TerminalExecutor {
         timedOut = true;
         child.kill();
       }, timeoutMilliseconds);
-      child.stdout.on("data", (chunk: Buffer) => stdout.append(chunk));
-      child.stderr.on("data", (chunk: Buffer) => stderr.append(chunk));
+      child.stdout.on("data", (chunk: Buffer) => {
+        stdout.append(chunk);
+      });
+      child.stderr.on("data", (chunk: Buffer) => {
+        stderr.append(chunk);
+      });
       child.once("error", (error) => {
         clearTimeout(timer);
         rejectResult(error);
