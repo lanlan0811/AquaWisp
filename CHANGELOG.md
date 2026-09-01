@@ -17,3 +17,4 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Deterministic model, policy, executor, verifier, clock, and ID generator for offline end-to-end replay tests.
 - Runtime smoke coverage for completed Runs, verified actions, `unknown` dispatch results, approval waits, cancellation, and database reopen recovery.
 - Configuration-driven M2 model catalog for four providers and nine models, including protocol-specific reasoning patches, aliases, official source metadata, and explicit pending verification markers.
+- Immutable reasoning request normalizer with protocol-specific nested set/unset patches, alias resolution, sampling-parameter constraints, and deterministic model revision hashes.

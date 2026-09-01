@@ -13,5 +13,9 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "@aquawisp/contracts": "0.0.0",
+    "@aquawisp/models-catalog": "0.0.0"
+  }
 }
