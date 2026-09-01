@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "commands": [
+    "navigate",
+    "back",
+    "forward",
+    "reload",
+    "waitFor",
+    "waitForURL",
+    "snapshot",
+    "screenshot",
+    "elementScreenshot",
+    "evaluate",
+    "getState",
+    "click",
+    "fill",
+    "type",
+    "press",
+    "hover",
+    "scroll",
+    "select",
+    "check",
+    "newTab",
+    "activateTab",
+    "listTabs",
+    "close",
+    "handleDialog",
+    "downloadPath",
+    "recordingStart",
+    "recordingStop"
+  ],
+  "limits": {
+    "requestIdCharacters": 128,
+    "tabIdCharacters": 128,
+    "refCharacters": 128,
+    "textCharacters": 100000,
+    "expressionCharacters": 100000,
+    "pathCharacters": 4096,
+    "timeoutMs": 120000,
+    "scrollDelta": 100000
+  }
+}
