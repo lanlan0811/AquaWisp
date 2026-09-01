@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "modes": [
+    { "id": "plan", "autoAllowRiskLevels": ["low"], "denyRiskLevels": ["medium", "high"] },
+    { "id": "work", "autoAllowRiskLevels": ["low", "medium"], "denyRiskLevels": [] },
+    { "id": "full_access", "autoAllowRiskLevels": ["low", "medium"], "denyRiskLevels": [] }
+  ],
+  "boundaryApprovalScopes": ["external", "secret", "platform"],
+  "decisionCodes": {
+    "invalidAction": "invalid_action",
+    "unknownTool": "unknown_tool",
+    "explicitDeny": "explicit_deny",
+    "projectDeny": "project_deny",
+    "boundaryApproval": "boundary_approval_required",
+    "modeDeny": "mode_denied",
+    "riskApproval": "risk_approval_required",
+    "modeAllow": "mode_auto_allowed"
+  },
+  "tools": [
+    { "id": "filesystem.read", "revision": "1", "riskLevel": "low", "sideEffect": false },
+    { "id": "filesystem.glob", "revision": "1", "riskLevel": "low", "sideEffect": false },
+    { "id": "filesystem.grep", "revision": "1", "riskLevel": "low", "sideEffect": false },
+    { "id": "filesystem.write", "revision": "1", "riskLevel": "medium", "sideEffect": true },
+    { "id": "filesystem.edit", "revision": "1", "riskLevel": "medium", "sideEffect": true },
+    { "id": "terminal.execute", "revision": "1", "riskLevel": "medium", "sideEffect": true },
+    { "id": "web.fetch", "revision": "1", "riskLevel": "low", "sideEffect": false }
+  ]
+}

@@ -11,6 +11,8 @@ AquaWisp avoids scattered behavior constants. Values that vary by package, platf
 | `packages/runtime/resources/prompts/bundle.json` | generated runtime resource | Versioned prompt contents consumed by the packaged runtime                                | generated only by `npm run prompts`                             |
 | `packages/contracts/src/*.ts`                    | protocol contracts         | Versioned Run, action, approval, model-signal and event schemas                           | zod parsing at every persistence and adapter boundary           |
 | `packages/models-catalog/src/catalog.data.json`  | model catalog              | Provider endpoints, model capabilities, protocols, reasoning levels and request patches   | zod cross-reference and protocol validation at module load      |
+| `packages/tools/src/tool-catalog.data.json`      | tool runtime               | Tool versions, risks, execution modes, boundary approval scopes and decision codes        | zod schema plus policy-order unit tests                         |
+| `vitest.config.ts`                               | repository tooling         | Cross-platform test scheduling and timeout budget                                         | full verification on Windows and macOS CI                       |
 
 `scripts/project-config.mjs` contains the sole bootstrap path to `config/project.json`; this path cannot be stored inside the registry it is used to locate. All downstream tooling resolves paths from the repository root and rejects escapes.
 
