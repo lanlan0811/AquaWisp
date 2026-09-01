@@ -6,7 +6,7 @@ A local-first knowledge-base harness agent for Chinese knowledge workers.
 
 AquaWisp connects research collection, knowledge organization, reliable retrieval, and office-document production in one traceable loop. Its independent runtime, six-stage agent state machine, action ledger, and risk-aware approvals make side effects controllable, recoverable, verifiable, and auditable.
 
-> Status: AquaWisp is under active `0.1.0` development. The M0 repository foundation is in place, but there is no usable desktop release yet. Follow the [roadmap](ROADMAP.md) for progress.
+> Status: AquaWisp is under active `0.1.0` development. The M0 repository foundation and M1 replayable runtime skeleton are complete, but there is no usable desktop release yet. Follow the [roadmap](ROADMAP.md) for progress.
 
 [简体中文](README.md)
 

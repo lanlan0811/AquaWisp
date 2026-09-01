@@ -13,5 +13,8 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "@aquawisp/contracts": "0.0.0"
+  }
 }

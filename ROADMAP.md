@@ -5,7 +5,7 @@ The roadmap targets the first complete desktop release, `0.1.0`. Milestones are 
 | Milestone | Scope                                                                                             | Status   |
 | --------- | ------------------------------------------------------------------------------------------------- | -------- |
 | M0        | Monorepo foundation, strict verification, prompt compiler, CI, open-source docs                   | Complete |
-| M1        | V1 contracts, six-stage runtime, action ledger, SQLite event store, deterministic replay          | Planned  |
+| M1        | V1 contracts, six-stage runtime, action ledger, SQLite event store, deterministic replay          | Complete |
 | M2        | OpenAI-compatible dual-protocol model client, model catalog, reasoning effort, context compaction | Planned  |
 | M3        | File, terminal and web tools; policy evaluation; cross-platform command execution                 | Planned  |
 | M4        | SQLite knowledge base, ingestion, Chinese FTS, vector search, RRF hybrid retrieval                | Planned  |

@@ -39,6 +39,8 @@ Every turn is modeled as six explicit stages:
 
 Side-effect actions advance through `planned → authorized → dispatched → observed → verified`. A dispatched action without a reliable result becomes `unknown`; recovery reconciles its actual state before any retry.
 
+The M1 implementation and event catalog are documented in [docs/runtime-v1.md](docs/runtime-v1.md).
+
 ## Packages and dependency direction
 
 | Package          | Responsibility                                         | Intended dependencies                          |

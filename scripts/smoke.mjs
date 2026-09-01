@@ -15,6 +15,9 @@ for (const packageDirectory of config.workspacePackages) {
 }
 
 await access(resolveInsideRepository(config.prompts.outputFile));
+const { runDeterministicSmoke } = await import("@aquawisp/runtime");
+const runtimeResult = await runDeterministicSmoke();
 console.log(
-  `Smoke check passed for ${config.workspacePackages.length} packages and the prompt bundle.`,
+  `Smoke check passed for ${config.workspacePackages.length} packages, the prompt bundle, ` +
+    `and runtime ${runtimeResult.runId} (${runtimeResult.eventCount} events).`,
 );

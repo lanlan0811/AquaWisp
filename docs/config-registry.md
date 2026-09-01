@@ -9,6 +9,7 @@ AquaWisp avoids scattered behavior constants. Values that vary by package, platf
 | `config/project.json`                            | repository tooling         | Workspace packages, prompt sources, architecture source roots, renderer forbidden imports | JSON schema plus architecture and unit checks                   |
 | `docs/prompts/*.md`                              | runtime prompts            | Chinese system instruction sources                                                        | deterministic compiler, per-file SHA-256, aggregate drift check |
 | `packages/runtime/resources/prompts/bundle.json` | generated runtime resource | Versioned prompt contents consumed by the packaged runtime                                | generated only by `npm run prompts`                             |
+| `packages/contracts/src/*.ts`                    | protocol contracts         | Versioned Run, action, approval, model-signal and event schemas                           | zod parsing at every persistence and adapter boundary           |
 
 `scripts/project-config.mjs` contains the sole bootstrap path to `config/project.json`; this path cannot be stored inside the registry it is used to locate. All downstream tooling resolves paths from the repository root and rejects escapes.
 
@@ -16,7 +17,6 @@ AquaWisp avoids scattered behavior constants. Values that vary by package, platf
 
 | Milestone | Registry                                                                                                  |
 | --------- | --------------------------------------------------------------------------------------------------------- |
-| M1        | Run state, event, action and approval schemas in `packages/contracts`                                     |
 | M2        | Provider/model capabilities, protocols, reasoning levels and request patches in `packages/models-catalog` |
 | M3        | Tool declarations, workspace policies, risk levels and cross-platform terminal adapters                   |
 | M4        | Ingestion extractors, chunking, embedding providers and retrieval weights                                 |
