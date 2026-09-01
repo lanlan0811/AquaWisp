@@ -28,3 +28,4 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Configuration-driven M3 tool registry and fixed-order policy evaluator for mode rules, explicit denials, boundary approvals, and auditable approval requests.
 - Workspace filesystem tools with real-root validation, revision-bound writes, exact text edits, and same-directory atomic replacement.
 - Cross-platform argv-based terminal executor with workspace-bound cwd, bounded output, and timeout termination.
+- Protocol-allowlisted, size-bounded `web_fetch` client that labels remote content as untrusted.
