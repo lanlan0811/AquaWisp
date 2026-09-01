@@ -20,6 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
+    "model:probe": "npm run build && node scripts/model-live-probe.mjs",
     "prompts": "node scripts/build-prompts.mjs",
     "prompts:check": "node scripts/build-prompts.mjs --check",
     "smoke": "npm run build && node scripts/smoke.mjs",

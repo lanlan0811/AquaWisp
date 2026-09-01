@@ -1,4 +1,9 @@
-import { ModelStreamInterruptedError, OpenAICompatibleClient } from "@aquawisp/model";
+import {
+  ModelStreamInterruptedError,
+  ModelStreamRecoveryExhaustedError,
+  OpenAICompatibleClient,
+  streamWithRecovery,
+} from "@aquawisp/model";
 import { validateCustomProviderConnection } from "@aquawisp/models-catalog";
 import { describe, expect, it } from "vitest";
 
@@ -198,5 +203,72 @@ describe("M2 OpenAI-compatible streaming client", () => {
       reasoning_effort: "standard",
     });
     expect(events).toEqual([{ kind: "completed", finishReason: null, sequence: 0 }]);
+  });
+
+  it("continues an interrupted stream only through an explicit recovery callback", async () => {
+    let requestNumber = 0;
+    const client = new OpenAICompatibleClient({
+      apiKey: "test-key",
+      baseUrl: "https://api.moonshot.cn/v1",
+      protocol: "chat_completions",
+      fetchImplementation: () => {
+        requestNumber += 1;
+        return Promise.resolve(
+          requestNumber === 1
+            ? sseResponse(['data: {"choices":[{"delta":{"content":"partial"}}]}\n\n'])
+            : sseResponse([
+                'data: {"choices":[{"delta":{"content":" resumed"},"finish_reason":"stop"}]}\n\n',
+                "data: [DONE]\n\n",
+              ]),
+        );
+      },
+    });
+    const resume = ({
+      emittedEvents,
+      recoveryAttempt,
+    }: Parameters<Parameters<typeof streamWithRecovery>[0]["resume"]>[0]) => {
+      expect(emittedEvents).toEqual([{ kind: "text_delta", delta: "partial", sequence: 0 }]);
+      expect(recoveryAttempt).toBe(1);
+      return Promise.resolve({ model: "kimi-k3", body: { messages: [], continuation: "partial" } });
+    };
+
+    const events = await collect(
+      streamWithRecovery({
+        client,
+        request: { model: "kimi-k3", body: { messages: [] } },
+        maximumRecoveryAttempts: 1,
+        resume,
+      }),
+    );
+
+    expect(events).toEqual([
+      { kind: "text_delta", delta: "partial", sequence: 0 },
+      { kind: "text_delta", delta: " resumed", sequence: 1 },
+      { kind: "completed", finishReason: "stop", sequence: 2 },
+    ]);
+    expect(requestNumber).toBe(2);
+  });
+
+  it("reports an exhausted recovery budget instead of blindly retrying", async () => {
+    const client = new OpenAICompatibleClient({
+      apiKey: "test-key",
+      baseUrl: "https://api.moonshot.cn/v1",
+      protocol: "chat_completions",
+      fetchImplementation: () => Promise.resolve(sseResponse([])),
+    });
+
+    await expect(
+      collect(
+        streamWithRecovery({
+          client,
+          request: { model: "kimi-k3", body: { messages: [] } },
+          maximumRecoveryAttempts: 0,
+          resume: () => Promise.resolve({ model: "kimi-k3", body: { messages: [] } }),
+        }),
+      ),
+    ).rejects.toMatchObject({
+      name: ModelStreamRecoveryExhaustedError.name,
+      recoveryAttempts: 0,
+    });
   });
 });

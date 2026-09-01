@@ -23,3 +23,5 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - SHA-256 context checkpoints plus atomically persisted `context.compacted` and `checkpoint.saved` event chains for recovery and auditability.
 - Session reasoning-effort registry that persists normalized levels and model revisions, suppresses alias-equivalent duplicate events, and restores state across runtime restart.
 - Validated custom-provider connection declaration with an explicit OpenAI-compatible protocol, usable directly by the streaming client without a built-in model lookup.
+- Explicit stream-recovery controller that preserves event ordering, never retries a cancelled request, and requires a caller-provided continuation plan after interruption.
+- Environment-only live-model probe that exercises the production stream client without persisting API keys.
