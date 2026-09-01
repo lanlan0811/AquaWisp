@@ -78,6 +78,7 @@ npm run smoke
 | `npm run package:desktop:mac` | 在 macOS 生成未签名 DMG 内部验证包                   |
 
 桌面端打包、签名与干净机器验收要求见 [桌面端打包与发布](docs/packaging.md)。
+本地 MCP server 的注册表与安全边界见 [stdio MCP 客户端](docs/mcp.md)。
 
 ## 安全与隐私
 

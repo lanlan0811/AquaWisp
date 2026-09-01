@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "client": {
+    "name": "aquawisp",
+    "version": "0.1.0"
+  },
+  "defaults": {
+    "requestTimeoutMs": 30000,
+    "maxObservationBytes": 1048576,
+    "maxBufferBytes": 10485760,
+    "maxStderrBytes": 65536
+  },
+  "servers": []
+}
