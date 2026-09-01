@@ -1,0 +1,551 @@
+{
+  "schemaVersion": 1,
+  "lastVerified": "2026-09-01",
+  "providers": [
+    {
+      "id": "bigmodel",
+      "name": "智谱 AI",
+      "defaultProtocol": "chat_completions",
+      "baseUrls": {
+        "chat_completions": "https://open.bigmodel.cn/api/paas/v4",
+        "responses": "https://open.bigmodel.cn/api/v1"
+      },
+      "sourceUrls": ["https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3"]
+    },
+    {
+      "id": "deepseek",
+      "name": "深度求索",
+      "defaultProtocol": "chat_completions",
+      "baseUrls": {
+        "chat_completions": "https://api.deepseek.com",
+        "responses": "https://api.deepseek.com"
+      },
+      "sourceUrls": ["https://api-docs.deepseek.com/guides/thinking_mode/"]
+    },
+    {
+      "id": "moonshot-kimi",
+      "name": "Moonshot Kimi",
+      "defaultProtocol": "chat_completions",
+      "baseUrls": { "chat_completions": "https://api.moonshot.cn/v1" },
+      "sourceUrls": ["https://www.kimi.ai/help/kimi-api/api-overview"]
+    },
+    {
+      "id": "qwen-alibaba-model-studio-cn",
+      "name": "阿里云百炼",
+      "defaultProtocol": "chat_completions",
+      "baseUrls": {
+        "chat_completions": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "responses": "https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
+      },
+      "sourceUrls": ["https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions"]
+    }
+  ],
+  "models": [
+    {
+      "id": "glm-5.3",
+      "name": "GLM-5.3",
+      "providerId": "bigmodel",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "maxOutputTokensStatus": "official",
+      "supportedProtocols": ["chat_completions", "responses"],
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "inputModalities": ["text"],
+      "reasoning": {
+        "defaultLevel": "max",
+        "aliases": { "medium": "high", "xhigh": "max" },
+        "levels": [
+          {
+            "id": "low",
+            "rank": 10,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "low" },
+                "unset": []
+              },
+              "responses": { "set": { "reasoning.effort": "low" }, "unset": [] }
+            }
+          },
+          {
+            "id": "high",
+            "rank": 20,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "high" },
+                "unset": []
+              },
+              "responses": { "set": { "reasoning.effort": "high" }, "unset": [] }
+            }
+          },
+          {
+            "id": "max",
+            "rank": 30,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "max" },
+                "unset": []
+              },
+              "responses": { "set": { "reasoning.effort": "max" }, "unset": [] }
+            }
+          }
+        ]
+      },
+      "sourceUrls": ["https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3"]
+    },
+    {
+      "id": "glm-5.3-flash",
+      "name": "GLM-5.3-Flash",
+      "providerId": "bigmodel",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "maxOutputTokensStatus": "official",
+      "supportedProtocols": ["chat_completions", "responses"],
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "inputModalities": ["text", "image"],
+      "reasoning": {
+        "defaultLevel": "max",
+        "aliases": { "medium": "high", "xhigh": "max" },
+        "levels": [
+          {
+            "id": "low",
+            "rank": 10,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "low" },
+                "unset": []
+              },
+              "responses": { "set": { "reasoning.effort": "low" }, "unset": [] }
+            }
+          },
+          {
+            "id": "high",
+            "rank": 20,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "high" },
+                "unset": []
+              },
+              "responses": { "set": { "reasoning.effort": "high" }, "unset": [] }
+            }
+          },
+          {
+            "id": "max",
+            "rank": 30,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "max" },
+                "unset": []
+              },
+              "responses": { "set": { "reasoning.effort": "max" }, "unset": [] }
+            }
+          }
+        ]
+      },
+      "sourceUrls": ["https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3-flash"]
+    },
+    {
+      "id": "glm-5.2",
+      "name": "GLM-5.2",
+      "providerId": "bigmodel",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "maxOutputTokensStatus": "official",
+      "supportedProtocols": ["chat_completions", "responses"],
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "inputModalities": ["text", "image"],
+      "reasoning": {
+        "defaultLevel": "max",
+        "aliases": { "low": "high", "medium": "high", "xhigh": "max" },
+        "levels": [
+          {
+            "id": "off",
+            "rank": 0,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "disabled" },
+                "unset": ["reasoning_effort"]
+              },
+              "responses": { "set": { "reasoning.effort": "none" }, "unset": [] }
+            }
+          },
+          {
+            "id": "high",
+            "rank": 20,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "high" },
+                "unset": []
+              },
+              "responses": { "set": { "reasoning.effort": "high" }, "unset": [] }
+            }
+          },
+          {
+            "id": "max",
+            "rank": 30,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "max" },
+                "unset": []
+              },
+              "responses": { "set": { "reasoning.effort": "max" }, "unset": [] }
+            }
+          }
+        ]
+      },
+      "sourceUrls": ["https://docs.bigmodel.cn/cn/guide/models/text/glm-5.2"]
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "name": "DeepSeek-V4-Pro",
+      "providerId": "deepseek",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 384000,
+      "maxOutputTokensStatus": "official",
+      "supportedProtocols": ["chat_completions", "responses"],
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "inputModalities": ["text"],
+      "reasoning": {
+        "defaultLevel": "high",
+        "aliases": { "medium": "high", "xhigh": "high" },
+        "levels": [
+          {
+            "id": "low",
+            "rank": 10,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "low" },
+                "unset": ["temperature", "top_p", "presence_penalty", "frequency_penalty"]
+              },
+              "responses": {
+                "set": { "reasoning.effort": "low" },
+                "unset": ["temperature", "top_p"]
+              }
+            }
+          },
+          {
+            "id": "high",
+            "rank": 20,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "high" },
+                "unset": ["temperature", "top_p", "presence_penalty", "frequency_penalty"]
+              },
+              "responses": {
+                "set": { "reasoning.effort": "high" },
+                "unset": ["temperature", "top_p"]
+              }
+            }
+          },
+          {
+            "id": "max",
+            "rank": 30,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "max" },
+                "unset": ["temperature", "top_p", "presence_penalty", "frequency_penalty"]
+              },
+              "responses": {
+                "set": { "reasoning.effort": "max" },
+                "unset": ["temperature", "top_p"]
+              }
+            }
+          }
+        ]
+      },
+      "sourceUrls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://api-docs.deepseek.com/guides/thinking_mode/"
+      ]
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "name": "DeepSeek-V4-Flash",
+      "providerId": "deepseek",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 384000,
+      "maxOutputTokensStatus": "official",
+      "supportedProtocols": ["chat_completions", "responses"],
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "inputModalities": ["text"],
+      "reasoning": {
+        "defaultLevel": "high",
+        "aliases": { "medium": "high", "xhigh": "high" },
+        "levels": [
+          {
+            "id": "low",
+            "rank": 10,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "low" },
+                "unset": ["temperature", "top_p", "presence_penalty", "frequency_penalty"]
+              },
+              "responses": {
+                "set": { "reasoning.effort": "low" },
+                "unset": ["temperature", "top_p"]
+              }
+            }
+          },
+          {
+            "id": "high",
+            "rank": 20,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "high" },
+                "unset": ["temperature", "top_p", "presence_penalty", "frequency_penalty"]
+              },
+              "responses": {
+                "set": { "reasoning.effort": "high" },
+                "unset": ["temperature", "top_p"]
+              }
+            }
+          },
+          {
+            "id": "max",
+            "rank": 30,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "max" },
+                "unset": ["temperature", "top_p", "presence_penalty", "frequency_penalty"]
+              },
+              "responses": {
+                "set": { "reasoning.effort": "max" },
+                "unset": ["temperature", "top_p"]
+              }
+            }
+          }
+        ]
+      },
+      "sourceUrls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://api-docs.deepseek.com/guides/thinking_mode/"
+      ]
+    },
+    {
+      "id": "deepseek-v4-flash-vision-exp",
+      "name": "DeepSeek-V4-Flash-Vision-Exp",
+      "providerId": "deepseek",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 384000,
+      "maxOutputTokensStatus": "official",
+      "supportedProtocols": ["chat_completions", "responses"],
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "inputModalities": ["text", "image"],
+      "reasoning": {
+        "defaultLevel": "high",
+        "aliases": { "medium": "high", "xhigh": "high" },
+        "levels": [
+          {
+            "id": "low",
+            "rank": 10,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "low" },
+                "unset": ["temperature", "top_p", "presence_penalty", "frequency_penalty"]
+              },
+              "responses": {
+                "set": { "reasoning.effort": "low" },
+                "unset": ["temperature", "top_p"]
+              }
+            }
+          },
+          {
+            "id": "high",
+            "rank": 20,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "high" },
+                "unset": ["temperature", "top_p", "presence_penalty", "frequency_penalty"]
+              },
+              "responses": {
+                "set": { "reasoning.effort": "high" },
+                "unset": ["temperature", "top_p"]
+              }
+            }
+          },
+          {
+            "id": "max",
+            "rank": 30,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "thinking.type": "enabled", "reasoning_effort": "max" },
+                "unset": ["temperature", "top_p", "presence_penalty", "frequency_penalty"]
+              },
+              "responses": {
+                "set": { "reasoning.effort": "max" },
+                "unset": ["temperature", "top_p"]
+              }
+            }
+          }
+        ]
+      },
+      "sourceUrls": ["https://api-docs.deepseek.com/api/create-response/"]
+    },
+    {
+      "id": "kimi-k3",
+      "name": "Kimi K3",
+      "providerId": "moonshot-kimi",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "maxOutputTokensStatus": "pending_live_verification",
+      "supportedProtocols": ["chat_completions"],
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "inputModalities": ["text", "image"],
+      "reasoning": {
+        "defaultLevel": "max",
+        "aliases": { "medium": "high", "xhigh": "max" },
+        "levels": [
+          {
+            "id": "low",
+            "rank": 10,
+            "protocolPatches": {
+              "chat_completions": { "set": { "reasoning_effort": "low" }, "unset": ["thinking"] }
+            }
+          },
+          {
+            "id": "high",
+            "rank": 20,
+            "protocolPatches": {
+              "chat_completions": { "set": { "reasoning_effort": "high" }, "unset": ["thinking"] }
+            }
+          },
+          {
+            "id": "max",
+            "rank": 30,
+            "protocolPatches": {
+              "chat_completions": { "set": { "reasoning_effort": "max" }, "unset": ["thinking"] }
+            }
+          }
+        ]
+      },
+      "sourceUrls": ["https://www.kimi.ai/help/kimi-api/api-overview"]
+    },
+    {
+      "id": "qwen3.8-max",
+      "name": "Qwen3.8-Max",
+      "providerId": "qwen-alibaba-model-studio-cn",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 131072,
+      "maxOutputTokensStatus": "official",
+      "supportedProtocols": ["chat_completions"],
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "inputModalities": ["text", "image", "video"],
+      "reasoning": {
+        "defaultLevel": "xhigh",
+        "aliases": { "minimal": "low", "high": "xhigh", "max": "xhigh" },
+        "levels": [
+          {
+            "id": "off",
+            "rank": 0,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "reasoning_effort": "none" },
+                "unset": ["enable_thinking", "thinking_budget"]
+              }
+            }
+          },
+          {
+            "id": "low",
+            "rank": 10,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "reasoning_effort": "low" },
+                "unset": ["enable_thinking", "thinking_budget"]
+              }
+            }
+          },
+          {
+            "id": "medium",
+            "rank": 20,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "reasoning_effort": "medium" },
+                "unset": ["enable_thinking", "thinking_budget"]
+              }
+            }
+          },
+          {
+            "id": "xhigh",
+            "rank": 30,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "reasoning_effort": "xhigh" },
+                "unset": ["enable_thinking", "thinking_budget"]
+              }
+            }
+          }
+        ]
+      },
+      "sourceUrls": [
+        "https://help.aliyun.com/zh/model-studio/qwen3-8-max",
+        "https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions"
+      ]
+    },
+    {
+      "id": "qwen3.8-flash",
+      "name": "Qwen3.8-Flash",
+      "providerId": "qwen-alibaba-model-studio-cn",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 131072,
+      "maxOutputTokensStatus": "official",
+      "supportedProtocols": ["chat_completions"],
+      "supportsTools": true,
+      "supportsStructuredOutput": true,
+      "inputModalities": ["text", "image", "video"],
+      "reasoning": {
+        "defaultLevel": "xhigh",
+        "aliases": { "minimal": "low", "high": "xhigh", "max": "xhigh" },
+        "levels": [
+          {
+            "id": "off",
+            "rank": 0,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "reasoning_effort": "none" },
+                "unset": ["enable_thinking", "thinking_budget"]
+              }
+            }
+          },
+          {
+            "id": "low",
+            "rank": 10,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "reasoning_effort": "low" },
+                "unset": ["enable_thinking", "thinking_budget"]
+              }
+            }
+          },
+          {
+            "id": "medium",
+            "rank": 20,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "reasoning_effort": "medium" },
+                "unset": ["enable_thinking", "thinking_budget"]
+              }
+            }
+          },
+          {
+            "id": "xhigh",
+            "rank": 30,
+            "protocolPatches": {
+              "chat_completions": {
+                "set": { "reasoning_effort": "xhigh" },
+                "unset": ["enable_thinking", "thinking_budget"]
+              }
+            }
+          }
+        ]
+      },
+      "sourceUrls": ["https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions"]
+    }
+  ]
+}
