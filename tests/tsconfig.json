@@ -8,6 +8,7 @@
   "include": ["../tests/**/*.ts", "../vitest.config.ts"],
   "references": [
     { "path": "../packages/contracts" },
+    { "path": "../packages/context" },
     { "path": "../packages/model" },
     { "path": "../packages/models-catalog" },
     { "path": "../packages/runtime" }

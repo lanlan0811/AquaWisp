@@ -62,6 +62,39 @@ export const runEventSchema = z.discriminatedUnion("type", [
     z.object({ actionId: entityIdSchema, reason: z.string().min(1) }).strict(),
   ),
   eventSchema("approval.required", z.object({ request: approvalRequestSchema }).strict()),
+  eventSchema(
+    "context.compacted",
+    z
+      .object({
+        beforeTokens: z.number().int().nonnegative(),
+        afterTokens: z.number().int().nonnegative(),
+        summaryItemId: entityIdSchema.nullable(),
+        retainedItemIds: z.array(entityIdSchema),
+        removedItemIds: z.array(entityIdSchema),
+        artifactReferences: z.array(
+          z
+            .object({
+              itemId: entityIdSchema,
+              reference: z.string().min(1),
+              preview: z.string().min(1),
+            })
+            .strict(),
+        ),
+        checkpointRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+      })
+      .strict(),
+  ),
+  eventSchema(
+    "checkpoint.saved",
+    z
+      .object({
+        revision: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+        itemIds: z.array(entityIdSchema),
+        tokenCount: z.number().int().nonnegative(),
+        reference: z.string().min(1),
+      })
+      .strict(),
+  ),
   eventSchema("run.completed", z.object({ finalOutput: z.string().min(1) }).strict()),
   eventSchema("run.cancelled", z.object({ reason: z.string().min(1) }).strict()),
   eventSchema(

@@ -182,6 +182,19 @@ export class SqliteEventStore {
     return this.#emit(this.#transaction(() => this.#appendEventInTransaction(event)));
   }
 
+  appendEvents(events: readonly PendingRunEvent[]): readonly RunEvent[] {
+    if (events.length === 0) {
+      return [];
+    }
+    const runId = events[0]?.runId;
+    if (runId === undefined || events.some((event) => event.runId !== runId)) {
+      throw new Error("An event batch must target exactly one run");
+    }
+    return this.#emitMany(
+      this.#transaction(() => events.map((event) => this.#appendEventInTransaction(event))),
+    );
+  }
+
   enterStage(runId: string, stage: RunStage, cycle: number, metadata: EventMetadata): RunEvent {
     return this.#emit(
       this.#transaction(() => {
@@ -530,6 +543,13 @@ export class SqliteEventStore {
       // The committed event store is authoritative; a streaming observer cannot roll it back.
     }
     return event;
+  }
+
+  #emitMany(events: readonly RunEvent[]): readonly RunEvent[] {
+    for (const event of events) {
+      this.#emit(event);
+    }
+    return events;
   }
 
   #transaction<T>(operation: () => T): T {

@@ -1,4 +1,5 @@
 export * from "./action-ledger.js";
+export * from "./context-events.js";
 export * from "./deterministic.js";
 export * from "./event-store.js";
 export * from "./ports.js";

@@ -19,3 +19,5 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Configuration-driven M2 model catalog for four providers and nine models, including protocol-specific reasoning patches, aliases, official source metadata, and explicit pending verification markers.
 - Immutable reasoning request normalizer with protocol-specific nested set/unset patches, alias resolution, sampling-parameter constraints, and deterministic model revision hashes.
 - Native-fetch OpenAI-compatible streaming client with incremental SSE parsing for Chat Completions and Responses, bounded HTTP errors, abort propagation, and explicit incomplete-stream detection.
+- Context compiler with configurable token budgets, threshold compression, bounded summaries, full recent-window retention, and artifact references for oversized tool results.
+- SHA-256 context checkpoints plus atomically persisted `context.compacted` and `checkpoint.saved` event chains for recovery and auditability.
