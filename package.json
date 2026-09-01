@@ -20,6 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
+    "evals": "node scripts/check-evals.mjs && npm test",
     "model:probe": "npm run build && node scripts/model-live-probe.mjs",
     "prompts": "node scripts/build-prompts.mjs",
     "prompts:check": "node scripts/build-prompts.mjs --check",

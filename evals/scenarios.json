@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    { "id": "runtime-replay", "category": "runtime", "mode": "offline" },
+    { "id": "runtime-unknown", "category": "runtime", "mode": "offline" },
+    { "id": "runtime-approval", "category": "runtime", "mode": "offline" },
+    { "id": "context-compaction", "category": "context", "mode": "offline" },
+    { "id": "context-checkpoint", "category": "context", "mode": "offline" },
+    { "id": "reasoning-glm-chat", "category": "model", "mode": "offline" },
+    { "id": "reasoning-glm-responses", "category": "model", "mode": "offline" },
+    { "id": "reasoning-deepseek-chat", "category": "model", "mode": "offline" },
+    { "id": "reasoning-deepseek-responses", "category": "model", "mode": "offline" },
+    { "id": "reasoning-kimi", "category": "model", "mode": "offline" },
+    { "id": "reasoning-qwen", "category": "model", "mode": "offline" },
+    { "id": "stream-recovery", "category": "model", "mode": "offline" },
+    { "id": "policy-explicit-deny", "category": "security", "mode": "offline" },
+    { "id": "policy-boundary-approval", "category": "security", "mode": "offline" },
+    { "id": "filesystem-boundary", "category": "tools", "mode": "offline" },
+    { "id": "terminal-timeout", "category": "tools", "mode": "offline" },
+    { "id": "web-fetch-protocol", "category": "tools", "mode": "offline" },
+    { "id": "knowledge-chinese-search", "category": "knowledge", "mode": "offline" },
+    { "id": "knowledge-hybrid-fusion", "category": "knowledge", "mode": "offline" },
+    { "id": "browser-request-dedup", "category": "browser", "mode": "offline" }
+  ]
+}
