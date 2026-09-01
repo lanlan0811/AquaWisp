@@ -23,7 +23,7 @@
     "zod": "4.5.4"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "node ../../scripts/build-desktop-preload.mjs --compile && tsc -b",
     "start": "npm run build --workspace @aquawisp/desktop && electron .",
     "package:dir": "npm run build --workspace @aquawisp/desktop && electron-builder --config electron-builder.json --dir --publish never",
     "package:win": "npm run build --workspace @aquawisp/desktop && electron-builder --config electron-builder.json --win nsis --publish never",

@@ -14,5 +14,16 @@
     "maxStderrBytes": 65536,
     "runAsNodeEnvironmentVariable": "ELECTRON_RUN_AS_NODE",
     "inheritedEnvironment": ["PATH", "Path", "SystemRoot", "TMP", "TEMP", "LANG", "LC_ALL"]
+  },
+  "secrets": {
+    "fileName": "secrets.json",
+    "maxSecretCharacters": 16384,
+    "maxCiphertextBytes": 65536
+  },
+  "ipcChannels": {
+    "runtimePing": "aquawisp:runtime:ping",
+    "secretSet": "aquawisp:secret:set",
+    "secretHas": "aquawisp:secret:has",
+    "secretDelete": "aquawisp:secret:delete"
   }
 }

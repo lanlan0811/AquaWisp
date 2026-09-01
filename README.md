@@ -79,6 +79,7 @@ npm run smoke
 
 桌面端打包、签名与干净机器验收要求见 [桌面端打包与发布](docs/packaging.md)。
 本地 MCP server 的注册表与安全边界见 [stdio MCP 客户端](docs/mcp.md)。
+API key 的系统加密与 renderer 权限边界见 [密钥存储与 IPC 边界](docs/secrets.md)。
 
 ## 安全与隐私
 

@@ -32,7 +32,12 @@ describe("M9 desktop packaging", () => {
     expect(config.asar).toBe(true);
     expect(config.directories.output).toBe("../../release/desktop");
     expect(config.directories.buildResources).toBe("build-resources");
-    expect(config.files).toEqual(["dist/**/*.js", "dist/**/*.json", "package.json"]);
+    expect(config.files).toEqual([
+      "dist/**/*.js",
+      "dist/**/*.cjs",
+      "dist/**/*.json",
+      "package.json",
+    ]);
     expect(config.win.target).toContainEqual({ target: "nsis", arch: ["x64"] });
     expect(config.mac.target).toContainEqual({ target: "dmg", arch: ["x64", "arm64"] });
   });

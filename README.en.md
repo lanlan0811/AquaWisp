@@ -51,6 +51,7 @@ npm run smoke
 Use `npm run package:desktop:dir` for a current-platform unpacked build, `npm run package:desktop:win` for a Windows NSIS installer, or `npm run package:desktop:mac` for a macOS DMG. See [Desktop packaging and release](docs/packaging.en.md) for signing and clean-machine acceptance requirements.
 
 See [stdio MCP client](docs/mcp.en.md) for the local-server registry and security boundaries.
+See [Secret storage and IPC boundary](docs/secrets.en.md) for operating-system encryption and renderer restrictions.
 
 ## Contributing and security
 

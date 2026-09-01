@@ -62,7 +62,7 @@ Cross-package imports use package public exports. Runtime code must not import r
 
 ## Persistence and secrets
 
-Workspace-local state lives under `.aqua/`, which is ignored by Git. The target event store and knowledge base use SQLite WAL mode. Model API keys are encrypted by Electron `safeStorage` using Windows DPAPI or macOS Keychain; the runtime requests secrets through controlled IPC and does not persist plaintext keys.
+Workspace-local state lives under `.aqua/`, which is ignored by Git. The event store and knowledge base use SQLite WAL mode. Model API keys are encrypted by Electron `safeStorage` using Windows DPAPI or macOS Keychain and stored only as ciphertext in the application user-data directory. The sandbox renderer can save, check, or delete a named secret but has no read/decrypt capability. See [docs/secrets.md](docs/secrets.md).
 
 ## Configuration
 

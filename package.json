@@ -25,12 +25,14 @@
     "package:desktop:dir": "npm run package:dir --workspace @aquawisp/desktop",
     "package:desktop:mac": "npm run package:mac --workspace @aquawisp/desktop",
     "package:desktop:win": "npm run package:win --workspace @aquawisp/desktop",
+    "preload": "node scripts/build-desktop-preload.mjs --write",
+    "preload:check": "node scripts/build-desktop-preload.mjs --check",
     "prompts": "node scripts/build-prompts.mjs",
     "prompts:check": "node scripts/build-prompts.mjs --check",
     "smoke": "npm run build && node scripts/smoke.mjs",
     "test": "vitest run",
     "typecheck": "tsc -b --pretty false",
-    "verify": "npm run prompts:check && npm run typecheck && npm run lint && npm run test && npm run architecture && npm run format:check"
+    "verify": "npm run prompts:check && npm run preload:check && npm run typecheck && npm run lint && npm run test && npm run architecture && npm run format:check"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

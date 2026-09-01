@@ -31,6 +31,25 @@ const desktopConfigSchema = z
           new Set(inheritedEnvironment).size === inheritedEnvironment.length,
         { message: "Inherited runtime environment names must be unique" },
       ),
+    secrets: z
+      .object({
+        fileName: z.string().min(1),
+        maxSecretCharacters: z.number().int().positive().max(1_048_576),
+        maxCiphertextBytes: z.number().int().positive().max(10_485_760),
+      })
+      .strict(),
+    ipcChannels: z
+      .object({
+        runtimePing: z.string().min(1),
+        secretSet: z.string().min(1),
+        secretHas: z.string().min(1),
+        secretDelete: z.string().min(1),
+      })
+      .strict()
+      .refine(({ runtimePing, secretSet, secretHas, secretDelete }) => {
+        const channels = [runtimePing, secretSet, secretHas, secretDelete];
+        return new Set(channels).size === channels.length;
+      }, "Desktop IPC channels must be unique"),
   })
   .strict();
 
