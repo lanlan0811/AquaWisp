@@ -52,6 +52,7 @@ Use `npm run package:desktop:dir` for a current-platform unpacked build, `npm ru
 
 See [stdio MCP client](docs/mcp.en.md) for the local-server registry and security boundaries.
 See [Secret storage and IPC boundary](docs/secrets.en.md) for operating-system encryption and renderer restrictions.
+See [Visible browser host](docs/browser-host.en.md) for the embedded webview and CDP security boundary.
 
 ## Contributing and security
 

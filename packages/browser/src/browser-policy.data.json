@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "initialUrl": "about:blank",
+  "allowedProtocols": ["http:", "https:"],
+  "debuggerProtocolVersion": "1.3"
+}

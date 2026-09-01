@@ -72,6 +72,8 @@ Bootstrap paths, workspace packages, prompt sources, policy tables, model capabi
 
 The desktop UI follows the AquaWisp design system: Chinese-first copy, tokenized light/dark themes, system font fallbacks, SVG-only icons, reduced-motion support, and ledger states communicated by icon plus text rather than color alone. UI implementation begins at M5, after the runtime and knowledge-base contracts stabilize.
 
+The M6 browser baseline adds a visible 280px webview panel. Electron main reasserts sandbox preferences during `will-attach-webview`, rejects non-HTTP(S) navigation and new windows, and owns one configured CDP session per registered guest. See [docs/browser-host.md](docs/browser-host.md).
+
 ## Verification layers
 
 - Prompt resource hash and drift check

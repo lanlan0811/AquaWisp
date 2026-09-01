@@ -10,6 +10,7 @@ import {
   desktopSecretPresenceResultSchema,
   desktopSecretSetRequestSchema,
 } from "@aquawisp/contracts";
+import { browserPolicy, hardenWebviewPreferences, type BrowserTabPort } from "@aquawisp/browser";
 import {
   app,
   BrowserWindow,
@@ -20,6 +21,7 @@ import {
 } from "electron";
 
 import { createRuntimeEnvironment, desktopConfig } from "./desktop-config.js";
+import { browserTabs, registerBrowserTab, validateWebviewSource } from "./browser-host.js";
 import { createDesktopMarkup, desktopStyles } from "./renderer/ui.js";
 import { RuntimeProcessClient } from "./runtime-client.js";
 import { SecretVault } from "./secret-vault.js";
@@ -35,15 +37,49 @@ function createWindow(runtimeConnected: boolean): BrowserWindowType {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      webviewTag: true,
       preload: fileURLToPath(new URL("./preload.cjs", import.meta.url)),
     },
   });
   authorizedWebContentsId = window.webContents.id;
   window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  window.webContents.on("will-attach-webview", (event, preferences, params) => {
+    try {
+      validateWebviewSource(params.src ?? "");
+      hardenWebviewPreferences(preferences);
+    } catch {
+      event.preventDefault();
+    }
+  });
+  window.webContents.on("did-attach-webview", (_event, guest) => {
+    const port: BrowserTabPort = {
+      id: guest.id.toString(),
+      currentUrl: () => guest.getURL() || browserPolicy.initialUrl,
+      isDebuggerAttached: () => guest.debugger.isAttached(),
+      attachDebugger: (version) => {
+        guest.debugger.attach(version);
+      },
+      detachDebugger: () => {
+        guest.debugger.detach();
+      },
+      denyWindowOpen: () => {
+        guest.setWindowOpenHandler(() => ({ action: "deny" }));
+      },
+      onWillNavigate: (handler) => {
+        guest.on("will-navigate", (navigationEvent, url) => {
+          if (!handler(url)) navigationEvent.preventDefault();
+        });
+      },
+      onDestroyed: (handler) => {
+        guest.once("destroyed", handler);
+      },
+    };
+    registerBrowserTab(port);
+  });
   window.webContents.on("will-navigate", (event) => {
     event.preventDefault();
   });
-  const document = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>沧渡 AquaWisp</title><style>${desktopStyles}</style></head><body>${createDesktopMarkup({ mode: "work", workspaceName: "本地工作区", modelName: "GLM-5.3", running: false, runtimeStatus: runtimeConnected ? "connected" : "disconnected" })}</body></html>`;
+  const document = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>沧渡 AquaWisp</title><style>${desktopStyles}</style></head><body>${createDesktopMarkup({ mode: "work", workspaceName: "本地工作区", modelName: "GLM-5.3", running: false, runtimeStatus: runtimeConnected ? "connected" : "disconnected", browserVisible: true })}</body></html>`;
   void window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(document)}`);
   return window;
 }
@@ -71,6 +107,7 @@ app.on("before-quit", (event) => {
   if (runtime === undefined || shutdownStarted) return;
   event.preventDefault();
   shutdownStarted = true;
+  browserTabs.dispose();
   void runtime.close().finally(() => {
     runtime = undefined;
     app.quit();

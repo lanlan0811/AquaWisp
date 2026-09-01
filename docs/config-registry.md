@@ -13,6 +13,7 @@ AquaWisp avoids scattered behavior constants. Values that vary by package, platf
 | `packages/models-catalog/src/catalog.data.json`  | model catalog              | Provider endpoints, model capabilities, protocols, reasoning levels and request patches   | zod cross-reference and protocol validation at module load      |
 | `packages/tools/src/tool-catalog.data.json`      | tool runtime               | Tool versions, risks, execution modes, boundary approval scopes and decision codes        | zod schema plus policy-order unit tests                         |
 | `packages/tools/src/mcp-registry.data.json`      | MCP client                 | Stdio server declarations, environment references, exact tool allowlists and size limits  | zod schema plus real stdio integration tests                    |
+| `packages/browser/src/browser-policy.data.json`  | browser host               | Initial page, URL protocol allowlist and pinned CDP protocol version                      | zod schema plus webview/tab lifecycle regression tests          |
 | `apps/desktop/src/desktop-config.data.json`      | Electron main/preload      | Window bounds, runtime limits, environment allowlist, secret limits and IPC channels      | zod schema, preload drift check and packaged-process tests      |
 | `vitest.config.ts`                               | repository tooling         | Cross-platform test scheduling and timeout budget                                         | full verification on Windows and macOS CI                       |
 
