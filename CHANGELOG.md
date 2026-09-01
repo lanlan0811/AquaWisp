@@ -22,3 +22,4 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Context compiler with configurable token budgets, threshold compression, bounded summaries, full recent-window retention, and artifact references for oversized tool results.
 - SHA-256 context checkpoints plus atomically persisted `context.compacted` and `checkpoint.saved` event chains for recovery and auditability.
 - Session reasoning-effort registry that persists normalized levels and model revisions, suppresses alias-equivalent duplicate events, and restores state across runtime restart.
+- Validated custom-provider connection declaration with an explicit OpenAI-compatible protocol, usable directly by the streaming client without a built-in model lookup.

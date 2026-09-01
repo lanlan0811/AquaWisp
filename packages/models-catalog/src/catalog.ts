@@ -1,7 +1,9 @@
 import catalogSource from "./catalog.data.json" with { type: "json" };
 
 import {
+  customProviderConnectionSchema,
   modelCatalogSchema,
+  type CustomProviderConnection,
   type ModelCatalog,
   type ModelDefinition,
   type ProviderDefinition,
@@ -33,4 +35,8 @@ export function resolveReasoningLevel(model: ModelDefinition, requestedLevel?: s
     throw new Error(`Model ${model.id} does not support reasoning level ${candidate}`);
   }
   return level;
+}
+
+export function validateCustomProviderConnection(input: unknown): CustomProviderConnection {
+  return customProviderConnectionSchema.parse(input);
 }

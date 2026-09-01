@@ -8,6 +8,10 @@ Qwen3.8 uses its current native levels `off`, `low`, `medium`, and `xhigh`; Open
 
 Kimi K3's 1M context window is documented, but its 128K maximum output still requires a direct authenticated response-limit check. The value remains explicitly marked `pending_live_verification`; catalog consumers must not present it as officially verified.
 
+## Custom providers
+
+Custom providers use `validateCustomProviderConnection` rather than the built-in catalog lookup. The settings layer must supply a validated provider ID/name, base URL, model capability declaration, and one explicit protocol (`chat_completions` or `responses`). The selected protocol must also be declared by that model; ambiguous automatic protocol fallback is rejected. API keys remain connection secrets and are passed directly to `OpenAICompatibleClient`, never stored in this catalog data.
+
 Primary references:
 
 - [GLM-5.3 official model page](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3)

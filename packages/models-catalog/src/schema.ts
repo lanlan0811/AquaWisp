@@ -96,6 +96,32 @@ export const modelDefinitionSchema = z
     }
   });
 
+export const customProviderConnectionSchema = z
+  .object({
+    providerId: z.string().min(1),
+    providerName: z.string().min(1),
+    baseUrl: z.url(),
+    protocol: modelProtocolSchema,
+    model: modelDefinitionSchema,
+  })
+  .strict()
+  .superRefine((connection, context) => {
+    if (connection.model.providerId !== connection.providerId) {
+      context.addIssue({
+        code: "custom",
+        path: ["model", "providerId"],
+        message: "custom model providerId must match its connection providerId",
+      });
+    }
+    if (!connection.model.supportedProtocols.includes(connection.protocol)) {
+      context.addIssue({
+        code: "custom",
+        path: ["model", "supportedProtocols"],
+        message: "custom model must declare the selected protocol",
+      });
+    }
+  });
+
 export const modelCatalogSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -140,3 +166,4 @@ export type ModelProtocol = z.infer<typeof modelProtocolSchema>;
 export type ProviderDefinition = z.infer<typeof providerDefinitionSchema>;
 export type ModelDefinition = z.infer<typeof modelDefinitionSchema>;
 export type ModelCatalog = z.infer<typeof modelCatalogSchema>;
+export type CustomProviderConnection = z.infer<typeof customProviderConnectionSchema>;

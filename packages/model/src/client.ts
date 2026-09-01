@@ -1,5 +1,5 @@
 import { jsonObjectSchema, type JsonObject } from "@aquawisp/contracts";
-import type { ModelProtocol } from "@aquawisp/models-catalog";
+import type { ModelDefinition, ModelProtocol } from "@aquawisp/models-catalog";
 
 import { normalizeReasoningRequest } from "./reasoning.js";
 import { parseServerSentEvents } from "./sse.js";
@@ -19,7 +19,7 @@ export interface OpenAICompatibleClientOptions {
 }
 
 export interface StreamModelRequest {
-  readonly model: string;
+  readonly model: string | ModelDefinition;
   readonly reasoningLevel?: string;
   readonly body: JsonObject;
   readonly signal?: AbortSignal;
@@ -53,11 +53,12 @@ export class OpenAICompatibleClient {
   }
 
   async *stream(request: StreamModelRequest): AsyncIterable<ModelStreamEvent> {
+    const modelId = typeof request.model === "string" ? request.model : request.model.id;
     const normalized = normalizeReasoningRequest({
       model: request.model,
       protocol: this.#protocol,
       ...(request.reasoningLevel === undefined ? {} : { requestedLevel: request.reasoningLevel }),
-      request: { ...request.body, model: request.model, stream: true },
+      request: { ...request.body, model: modelId, stream: true },
     });
     const endpoint = new URL(
       this.#protocol === "chat_completions" ? "chat/completions" : "responses",

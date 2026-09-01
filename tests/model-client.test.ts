@@ -1,4 +1,5 @@
 import { ModelStreamInterruptedError, OpenAICompatibleClient } from "@aquawisp/model";
+import { validateCustomProviderConnection } from "@aquawisp/models-catalog";
 import { describe, expect, it } from "vitest";
 
 function sseResponse(chunks: readonly string[]): Response {
@@ -140,5 +141,62 @@ describe("M2 OpenAI-compatible streaming client", () => {
     await expect(
       collect(client.stream({ model: "deepseek-v4-pro", body: { messages: [] } })),
     ).rejects.toEqual(expect.objectContaining({ status: 401, responseBody: "01234567" }));
+  });
+
+  it("uses an explicitly selected custom-provider protocol without a built-in catalog lookup", async () => {
+    let requestedUrl = "";
+    let requestedBody: unknown;
+    const custom = validateCustomProviderConnection({
+      providerId: "custom-provider",
+      providerName: "Custom Provider",
+      baseUrl: "http://localhost:4010/v1",
+      protocol: "chat_completions",
+      model: {
+        id: "custom-model",
+        name: "Custom Model",
+        providerId: "custom-provider",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        maxOutputTokensStatus: "pending_live_verification",
+        supportedProtocols: ["chat_completions"],
+        supportsTools: true,
+        supportsStructuredOutput: false,
+        inputModalities: ["text"],
+        reasoning: {
+          defaultLevel: "standard",
+          aliases: {},
+          levels: [
+            {
+              id: "standard",
+              rank: 10,
+              protocolPatches: {
+                chat_completions: { set: { reasoning_effort: "standard" }, unset: [] },
+              },
+            },
+          ],
+        },
+        sourceUrls: ["http://localhost:4010/v1"],
+      },
+    });
+    const client = new OpenAICompatibleClient({
+      apiKey: "test-key",
+      baseUrl: custom.baseUrl,
+      protocol: custom.protocol,
+      fetchImplementation: (input, init) => {
+        requestedUrl = requestUrl(input);
+        requestedBody = requestJsonBody(init);
+        return Promise.resolve(sseResponse(["data: [DONE]\n\n"]));
+      },
+    });
+
+    const events = await collect(client.stream({ model: custom.model, body: { messages: [] } }));
+
+    expect(requestedUrl).toBe("http://localhost:4010/v1/chat/completions");
+    expect(requestedBody).toMatchObject({
+      model: "custom-model",
+      stream: true,
+      reasoning_effort: "standard",
+    });
+    expect(events).toEqual([{ kind: "completed", finishReason: null, sequence: 0 }]);
   });
 });
