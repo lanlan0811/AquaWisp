@@ -46,6 +46,7 @@
     "conversationEvent": "aquawisp:conversation:event",
     "knowledgeList": "aquawisp:knowledge:list",
     "knowledgeAddFiles": "aquawisp:knowledge:add-files",
-    "knowledgeRemove": "aquawisp:knowledge:remove"
+    "knowledgeRemove": "aquawisp:knowledge:remove",
+    "approvalResolve": "aquawisp:approval:resolve"
   }
 }

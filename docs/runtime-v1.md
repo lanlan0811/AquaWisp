@@ -35,7 +35,7 @@ Every event has an ID, Run ID, per-Run sequence, ISO timestamp, trace ID, parent
 - model text deltas and structured decisions;
 - per-session reasoning-effort changes, including normalized model revision and previous state;
 - action planning, authorization, dispatch, observation, verification, and unknown state;
-- structured approval requests.
+- structured approval requests and exact, timestamped approval resolutions.
 
 The event callback receives only committed events. Observer failures cannot roll back the authoritative SQLite transaction.
 
@@ -65,4 +65,4 @@ These adapters are test infrastructure, not a security policy or production tool
 
 M5 adds a strict V1 JSONL RPC envelope in `packages/contracts` plus a stdio process host. Electron main supervises that process, verifies `runtime.ping` before reporting a connected state, and sends `runtime.shutdown` before application exit. Request correlation, protocol version, response size, stderr size, timeout, and inherited environment names are bounded outside the model's control.
 
-`runtime.run.start` selects a catalog-validated OpenAI-compatible model, prepares hash-verified system prompts and persisted session context, then streams committed `RunEvent` envelopes before returning the terminal Run. Provider-stream continuations emit `model.stream.recovery`. `runtime.run.cancel` is handled concurrently, aborts only the matching active Run, and lets `RunEngine` persist `run.cancelled`. Only one Run may be active in this v1 host. Ping remains available during execution; shutdown aborts and awaits an active Run before closing the event store. Approval resumption will extend this same discriminated contract.
+`runtime.run.start` selects a catalog-validated OpenAI-compatible model, prepares hash-verified system prompts and persisted session context, then streams committed `RunEvent` envelopes before returning the terminal Run. Provider-stream continuations emit `model.stream.recovery`. `runtime.run.cancel` is handled concurrently, aborts only the matching active Run, and lets `RunEngine` persist `run.cancelled`. `runtime.approval.resolve` accepts only the exact pending Run and approval IDs; `approval.resolved` is committed before the action can enter `authorized`. Exact operation/target/risk/impact grants can be remembered for the current session and are cleared by restart. Only one Run may be active in this v1 host. Ping remains available during execution; shutdown aborts and awaits an active Run before closing the event store.

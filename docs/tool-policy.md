@@ -6,6 +6,8 @@
 
 `plan` 仅自动放行低风险操作；`work` 自动放行低、中风险的工作区操作；越出工作区、涉及秘密或平台边界的动作始终返回结构化审批请求。每个请求含 action、目标、风险原因、时间与可审计审批 ID。
 
+桌面审批通过版本化 runtime RPC 恢复仍停在 authorize 的 Run。审批 ID、Run ID 与 action ID 必须完整匹配；允许决定先写入 `approval.resolved` 再推进账本，拒绝决定记录 `action.denied` 且不派发。会话内授权按操作、目标、风险原因和影响范围精确匹配，runtime 重启后保守失效。详见 [桌面端审批与会话授权](desktop-approvals.md)。
+
 文件工具使用工作区的真实根路径校验输入。读取返回内容 SHA-256 revision；写入和编辑必须携带该 revision，且写入会在目标同一目录内完成原子替换。符号链接或 junction 指向工作区外时会被拒绝。
 
 终端工具只接收可执行文件与参数数组，使用 `shell: false` 启动进程；命令行不经字符串拼接。cwd 必须解析到工作区真实根内，stdout/stderr 都有上限，超时后会终止子进程并在结构化结果中标记。

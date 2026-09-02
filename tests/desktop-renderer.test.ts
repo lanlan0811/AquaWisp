@@ -35,6 +35,9 @@ describe("M5 design-system desktop renderer", () => {
     expect(markup).toContain("data-knowledge-add");
     expect(markup).toContain("data-knowledge-list");
     expect(markup).toContain("data-knowledge-remove-dialog");
+    expect(markup).toContain("data-approval-dialog");
+    expect(markup).toContain("data-approval-remember");
+    expect(markup).toContain("本会话内，相同操作、目标和影响范围总是允许");
     expect(markup).toContain('name="reasoningLevel"');
     expect(markup).toContain('type="password"');
     expect(markup).not.toContain("fixture-secret");
@@ -46,6 +49,9 @@ describe("M5 design-system desktop renderer", () => {
     expect(desktopRendererScript).toContain("api.knowledge.list");
     expect(desktopRendererScript).toContain("api.knowledge.addFiles");
     expect(desktopRendererScript).toContain("api.knowledge.remove");
+    expect(desktopRendererScript).toContain("api.approvals.resolve");
+    expect(desktopRendererScript).toContain('runEvent.type === "approval.required"');
+    expect(desktopRendererScript).toContain('approvalDialog?.addEventListener("cancel"');
     expect(desktopRendererScript).toContain("knowledgeList.replaceChildren");
     expect(desktopRendererScript).not.toContain("knowledgeList.innerHTML");
     expect(desktopRendererScript).toContain(

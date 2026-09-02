@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { authorizationDecisionSchema } from "@aquawisp/contracts";
+import { authorizationDecisionSchema, type RunEvent } from "@aquawisp/contracts";
 import {
   AllowAllSimulationPolicy,
   DeterministicClock,
@@ -11,6 +11,7 @@ import {
   DeterministicVerifier,
   EchoSimulationExecutor,
   RunEngine,
+  SessionApprovalCoordinator,
   SqliteEventStore,
   type ActionExecutorPort,
   type PolicyPort,
@@ -209,6 +210,85 @@ describe("M1 runtime", () => {
     expect(events.at(-1)?.type).toBe("approval.required");
     expect(actions[0]?.state).toBe("planned");
     expect(rebuilt.run).toEqual(run);
+  });
+
+  it("records a bound denial and terminates without dispatching the action", async () => {
+    const databasePath = await createDatabasePath();
+    let notifyApproval:
+      ((event: Extract<RunEvent, { type: "approval.required" }>) => void) | undefined;
+    const required = new Promise<Extract<RunEvent, { type: "approval.required" }>>(
+      (resolvePromise) => {
+        notifyApproval = resolvePromise;
+      },
+    );
+    const store = new SqliteEventStore({
+      databasePath,
+      onEvent: (event) => {
+        if (event.type === "approval.required") notifyApproval?.(event);
+      },
+    });
+    const approval = new SessionApprovalCoordinator();
+    const policy: PolicyPort = {
+      authorize(action) {
+        return Promise.resolve({
+          decision: {
+            outcome: "requires_approval",
+            reasonCode: "simulation_confirmation",
+            humanSummary: "该动作需要用户确认",
+            approvalId: "approval-denied",
+          },
+          approvalRequest: {
+            id: "approval-denied",
+            runId: action.runId,
+            actionId: action.id,
+            status: "pending",
+            actionType: action.toolName,
+            target: "受保护目标",
+            riskReason: "模拟高风险动作",
+            impact: "如果允许，将执行一次模拟写入",
+            requestedAt: "2026-08-29T00:00:00.000Z",
+            resolvedAt: null,
+          },
+        });
+      },
+    };
+    let executions = 0;
+    const engine = new RunEngine({
+      store,
+      model: createModel(),
+      approval,
+      policy,
+      executor: {
+        execute() {
+          executions += 1;
+          return Promise.resolve({ ok: true, output: null });
+        },
+      },
+      verifier: new DeterministicVerifier(),
+      clock: new DeterministicClock(new Date("2026-08-29T00:00:00.000Z"), 5),
+      ids: new DeterministicIdGenerator("deny"),
+      maxCycles: 3,
+    });
+    const runPromise = engine.start({
+      sessionId: "session-denied-approval",
+      userInput: "拒绝审批",
+    });
+    const event = await required;
+    approval.resolve({
+      approvalId: event.payload.request.id,
+      runId: event.runId,
+      decision: "deny",
+      rememberForSession: false,
+    });
+    const run = await runPromise;
+    const eventTypes = store.listEvents(run.id).map(({ type }) => type);
+    const action = store.listActions(run.id)[0];
+    store.close();
+
+    expect(run).toMatchObject({ status: "failed", errorCode: "user_denied_approval" });
+    expect(executions).toBe(0);
+    expect(action?.state).toBe("planned");
+    expect(eventTypes.slice(-3)).toEqual(["approval.resolved", "action.denied", "run.failed"]);
   });
 
   it("records policy denial before failing the Run", async () => {

@@ -70,6 +70,7 @@ const desktopConfigSchema = z
         knowledgeList: z.string().min(1),
         knowledgeAddFiles: z.string().min(1),
         knowledgeRemove: z.string().min(1),
+        approvalResolve: z.string().min(1),
       })
       .strict()
       .refine((channels) => {

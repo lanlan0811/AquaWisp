@@ -1,6 +1,7 @@
 import type {
   ActionRecord,
   ApprovalRequest,
+  ApprovalUserDecision,
   AuthorizationDecision,
   ModelSignal,
   Observation,
@@ -44,6 +45,18 @@ export interface AuthorizationResult {
 
 export interface PolicyPort {
   authorize(action: ActionRecord): Promise<AuthorizationResult>;
+}
+
+export interface ApprovalWaitRequest {
+  readonly sessionId: string;
+  readonly request: ApprovalRequest;
+  readonly signal: AbortSignal;
+}
+
+export interface ApprovalPort {
+  hasSessionGrant(sessionId: string, request: ApprovalRequest): boolean;
+  rememberSessionGrant(sessionId: string, request: ApprovalRequest): void;
+  waitForDecision(request: ApprovalWaitRequest): Promise<ApprovalUserDecision>;
 }
 
 export interface ActionExecutorPort {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { entityIdSchema, jsonObjectSchema } from "./common.js";
+import { approvalUserDecisionSchema } from "./approval.js";
 import { runEventSchema } from "./events.js";
 
 const runtimeRpcEnvelope = {
@@ -66,6 +67,13 @@ export const runtimeRpcRequestSchema = z.discriminatedUnion("method", [
       ...runtimeRpcEnvelope,
       method: z.literal("runtime.kb.remove"),
       params: z.object({ documentId: entityIdSchema }).strict(),
+    })
+    .strict(),
+  z
+    .object({
+      ...runtimeRpcEnvelope,
+      method: z.literal("runtime.approval.resolve"),
+      params: approvalUserDecisionSchema,
     })
     .strict(),
 ]);

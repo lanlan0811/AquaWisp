@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 import { actionRecordSchema, observationSchema, verificationSchema } from "./action.js";
-import { approvalRequestSchema, authorizationDecisionSchema } from "./approval.js";
+import {
+  approvalRequestSchema,
+  approvalResolutionSchema,
+  authorizationDecisionSchema,
+} from "./approval.js";
 import { entityIdSchema, jsonObjectSchema, timestampSchema } from "./common.js";
 import { modelDecisionSchema } from "./model.js";
 import { runRecordSchema, runStageSchema } from "./run.js";
@@ -71,6 +75,7 @@ export const runEventSchema = z.discriminatedUnion("type", [
     z.object({ actionId: entityIdSchema, reason: z.string().min(1) }).strict(),
   ),
   eventSchema("approval.required", z.object({ request: approvalRequestSchema }).strict()),
+  eventSchema("approval.resolved", z.object({ resolution: approvalResolutionSchema }).strict()),
   eventSchema(
     "session.reasoning_effort.updated",
     z

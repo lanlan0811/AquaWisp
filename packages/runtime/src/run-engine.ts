@@ -6,6 +6,7 @@ import {
   observationSchema,
   runRecordSchema,
   type ActionRecord,
+  type AuthorizationDecision,
   type ModelDecision,
   type Observation,
   type RunEvent,
@@ -19,6 +20,7 @@ import type { EventMetadata } from "./event-store.js";
 import { SqliteEventStore } from "./event-store.js";
 import type {
   ActionExecutorPort,
+  ApprovalPort,
   ClockPort,
   IdGeneratorPort,
   ModelPort,
@@ -37,6 +39,7 @@ export interface RunEngineOptions {
   readonly ids: IdGeneratorPort;
   readonly maxCycles: number;
   readonly context?: RunContextPort;
+  readonly approval?: ApprovalPort;
 }
 
 export interface StartRunRequest {
@@ -55,6 +58,7 @@ export class RunEngine {
   readonly #ids: IdGeneratorPort;
   readonly #maxCycles: number;
   readonly #context: RunContextPort | undefined;
+  readonly #approval: ApprovalPort | undefined;
   readonly #ledger: ActionLedger;
   #traceId = "";
   #lastEventId: string | null = null;
@@ -73,6 +77,7 @@ export class RunEngine {
     this.#ids = options.ids;
     this.#maxCycles = options.maxCycles;
     this.#context = options.context;
+    this.#approval = options.approval;
     this.#ledger = new ActionLedger(options.store);
   }
 
@@ -134,28 +139,80 @@ export class RunEngine {
 
         this.#enterStage(runId, "authorize", cycle);
         const authorization = await this.#policy.authorize(action);
+        let authorizationDecision: AuthorizationDecision = authorization.decision;
         if (authorization.decision.outcome === "requires_approval") {
-          if (authorization.approvalRequest === undefined) {
+          const approvalRequest = authorization.approvalRequest;
+          if (
+            approvalRequest === undefined ||
+            approvalRequest.id !== authorization.decision.approvalId ||
+            approvalRequest.runId !== runId ||
+            approvalRequest.actionId !== action.id
+          ) {
             return this.#fail(
               runId,
               "invalid_approval_request",
-              "Policy required approval without a structured approval request",
+              "Policy approval request did not match its Run, action, or decision",
             );
           }
-          this.#record(
-            this.#store.waitForApproval(runId, authorization.approvalRequest, this.#metadata()),
-          );
-          return this.#store.getRun(runId);
+          if (this.#approval?.hasSessionGrant(run.sessionId, approvalRequest)) {
+            authorizationDecision = {
+              outcome: "allowed",
+              reasonCode: "session_approval_grant",
+              humanSummary: "本会话已允许相同类型、目标与影响范围的动作。",
+            };
+          } else {
+            this.#record(this.#store.waitForApproval(runId, approvalRequest, this.#metadata()));
+            if (this.#approval === undefined) return this.#store.getRun(runId);
+            const userDecision = await this.#approval.waitForDecision({
+              sessionId: run.sessionId,
+              request: approvalRequest,
+              signal: abortSignal,
+            });
+            this.#record(
+              this.#store.resolveApproval(
+                runId,
+                {
+                  ...userDecision,
+                  actionId: action.id,
+                  resolvedAt: this.#clock.now().toISOString(),
+                },
+                this.#metadata(),
+              ),
+            );
+            if (userDecision.decision === "approve" && userDecision.rememberForSession) {
+              this.#approval.rememberSessionGrant(run.sessionId, approvalRequest);
+            }
+            if (userDecision.decision === "deny") {
+              const deniedDecision: AuthorizationDecision = {
+                outcome: "denied",
+                reasonCode: "user_denied_approval",
+                humanSummary: "用户拒绝了该动作。",
+                approvalId: approvalRequest.id,
+              };
+              this.#record(this.#ledger.deny(action, deniedDecision, this.#metadata()));
+              return this.#fail(runId, deniedDecision.reasonCode, deniedDecision.humanSummary);
+            }
+            authorizationDecision = {
+              outcome: "allowed",
+              reasonCode: userDecision.rememberForSession
+                ? "user_approved_for_session"
+                : "user_approved_once",
+              humanSummary: userDecision.rememberForSession
+                ? "用户允许本次动作，并记住本会话内完全相同的授权范围。"
+                : "用户仅允许本次动作。",
+              approvalId: approvalRequest.id,
+            };
+          }
         }
-        if (authorization.decision.outcome === "denied") {
-          this.#record(this.#ledger.deny(action, authorization.decision, this.#metadata()));
+        if (authorizationDecision.outcome === "denied") {
+          this.#record(this.#ledger.deny(action, authorizationDecision, this.#metadata()));
           return this.#fail(
             runId,
-            authorization.decision.reasonCode,
-            authorization.decision.humanSummary,
+            authorizationDecision.reasonCode,
+            authorizationDecision.humanSummary,
           );
         }
-        this.#record(this.#ledger.authorize(action, authorization.decision, this.#metadata()));
+        this.#record(this.#ledger.authorize(action, authorizationDecision, this.#metadata()));
 
         this.#enterStage(runId, "execute", cycle);
         this.#record(this.#ledger.dispatch(action, this.#metadata()));

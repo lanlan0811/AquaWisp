@@ -15,10 +15,11 @@ import {
 import { getBuiltInModel } from "@aquawisp/models-catalog";
 
 import { CatalogModelPort } from "./catalog-model-port.js";
+import { SessionApprovalCoordinator } from "./approval-coordinator.js";
 import { PersistentConversationContext } from "./conversation-context.js";
 import { SqliteEventStore } from "./event-store.js";
 import { RuntimeKnowledgeLibrary } from "./knowledge-library.js";
-import type { ModelPort } from "./ports.js";
+import type { ActionExecutorPort, ModelPort, PolicyPort, VerificationPort } from "./ports.js";
 import {
   BasicOutputVerifier,
   RandomIdGenerator,
@@ -57,6 +58,9 @@ export interface RuntimeRunServiceOptions {
   readonly createModel?: (params: RuntimeRunStartRequest["params"]) => ModelPort;
   readonly contextConfig?: RuntimeContextConfig;
   readonly promptBundlePath?: string;
+  readonly policy?: PolicyPort;
+  readonly executor?: ActionExecutorPort;
+  readonly verifier?: VerificationPort;
 }
 
 export class RuntimeRunService {
@@ -65,6 +69,10 @@ export class RuntimeRunService {
   readonly #workingDirectory: string;
   readonly #onEvent: RuntimeRunServiceOptions["onEvent"];
   readonly #createModel: NonNullable<RuntimeRunServiceOptions["createModel"]>;
+  readonly #policy: PolicyPort;
+  readonly #executor: ActionExecutorPort;
+  readonly #verifier: VerificationPort;
+  readonly #approval = new SessionApprovalCoordinator();
   readonly #contextConfig: RuntimeContextConfig;
   readonly #promptBundlePath: string | undefined;
   #activeRun: ActiveRuntimeRun | undefined;
@@ -85,6 +93,9 @@ export class RuntimeRunService {
           apiKey: params.apiKey,
           maximumRecoveryAttempts: runtimeHostConfig.streamRecovery.maximumAttempts,
         }));
+    this.#policy = options.policy ?? new RejectUnexpectedActionPolicy();
+    this.#executor = options.executor ?? new RejectUnexpectedActionExecutor();
+    this.#verifier = options.verifier ?? new BasicOutputVerifier();
     this.#store = new SqliteEventStore({
       databasePath: join(options.workingDirectory, runtimeHostConfig.databaseFileName),
       onEvent: (event) => {
@@ -110,6 +121,23 @@ export class RuntimeRunService {
 
   async handle(request: RuntimeRpcRequest): Promise<RuntimeRpcResponse> {
     if (request.method === "runtime.run.cancel") return this.#cancel(request);
+    if (request.method === "runtime.approval.resolve") {
+      try {
+        this.#approval.resolve(request.params);
+        return runtimeRpcResponseSchema.parse({
+          protocolVersion: 1,
+          requestId: request.requestId,
+          ok: true,
+          result: { accepted: true },
+        });
+      } catch (error) {
+        return errorResponse(
+          request.requestId,
+          "approval_not_pending",
+          error instanceof Error ? error.message : "Approval resolution failed",
+        );
+      }
+    }
     if (
       request.method === "runtime.kb.state" ||
       request.method === "runtime.kb.add_file" ||
@@ -147,6 +175,7 @@ export class RuntimeRunService {
       const engine = new RunEngine({
         store: this.#store,
         model: this.#createModel(request.params),
+        approval: this.#approval,
         context: new PersistentConversationContext({
           store: this.#store,
           workingDirectory: this.#workingDirectory,
@@ -158,9 +187,9 @@ export class RuntimeRunService {
             ? {}
             : { promptBundlePath: this.#promptBundlePath }),
         }),
-        policy: new RejectUnexpectedActionPolicy(),
-        executor: new RejectUnexpectedActionExecutor(),
-        verifier: new BasicOutputVerifier(),
+        policy: this.#policy,
+        executor: this.#executor,
+        verifier: this.#verifier,
         clock: new SystemClock(),
         ids: new RandomIdGenerator(),
         maxCycles: runtimeHostConfig.maximumCycles,
@@ -244,6 +273,7 @@ export class RuntimeRunService {
   }
 
   close(): void {
+    this.#approval.rejectAll(new Error("Runtime is shutting down"));
     this.#store.close();
     this.#knowledgeLibrary.close();
   }

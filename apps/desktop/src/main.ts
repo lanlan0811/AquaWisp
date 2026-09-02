@@ -4,6 +4,8 @@ import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  desktopApprovalResolveRequestSchema,
+  desktopApprovalResolveResultSchema,
   desktopConversationCancelRequestSchema,
   desktopConversationEventSchema,
   desktopConversationStartRequestSchema,
@@ -340,6 +342,17 @@ function registerDesktopIpc(secretVault: SecretVault, settingsStore: DesktopSett
     const response = await runtime.request({ method: "runtime.kb.remove", params: request });
     if (!response.ok) throw new Error("无法移除知识库来源");
     return desktopKnowledgeStateResultSchema.parse(response.result.state);
+  });
+  ipcMain.handle(desktopConfig.ipcChannels.approvalResolve, async (event, input: unknown) => {
+    assertAuthorizedRenderer(event);
+    if (runtime === undefined) throw new Error("运行时未连接");
+    const request = desktopApprovalResolveRequestSchema.parse(input);
+    const response = await runtime.request({
+      method: "runtime.approval.resolve",
+      params: request,
+    });
+    if (!response.ok) throw new Error("该审批已失效或不属于当前运行");
+    return desktopApprovalResolveResultSchema.parse(response.result);
   });
 }
 

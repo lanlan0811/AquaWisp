@@ -2,11 +2,14 @@ import { DatabaseSync } from "node:sqlite";
 
 import {
   actionRecordSchema,
+  approvalRequestSchema,
+  approvalResolutionSchema,
   runEventSchema,
   runRecordSchema,
   type ActionRecord,
   type ActionState,
   type ApprovalRequest,
+  type ApprovalResolution,
   type RunEvent,
   type RunEventType,
   type RunRecord,
@@ -314,6 +317,51 @@ export class SqliteEventStore {
     );
   }
 
+  resolveApproval(
+    runId: string,
+    resolutionInput: ApprovalResolution,
+    metadata: EventMetadata,
+  ): RunEvent {
+    const resolution = approvalResolutionSchema.parse(resolutionInput);
+    if (resolution.runId !== runId) {
+      throw new Error("Approval resolution does not belong to the specified Run");
+    }
+    return this.#emit(
+      this.#transaction(() => {
+        const pendingRow = this.#database
+          .prepare(
+            "SELECT payload_json FROM events WHERE run_id = ? AND type = 'approval.required' ORDER BY sequence DESC LIMIT 1",
+          )
+          .get(runId) as { payload_json: string } | undefined;
+        const pending = approvalRequestSchema.parse(
+          (JSON.parse(pendingRow?.payload_json ?? "null") as { request?: unknown } | null)?.request,
+        );
+        if (
+          pending.id !== resolution.approvalId ||
+          pending.actionId !== resolution.actionId ||
+          pending.status !== "pending"
+        ) {
+          throw new Error("Approval resolution does not match the pending approval");
+        }
+        const result = this.#database
+          .prepare(
+            `UPDATE runs SET status = 'running', updated_at = ?, revision = revision + 1
+             WHERE run_id = ? AND status = 'waiting_approval'`,
+          )
+          .run(metadata.timestamp, runId);
+        if (result.changes !== 1) {
+          throw new Error(`Cannot resolve approval on a Run that is not waiting: ${runId}`);
+        }
+        return this.#appendEventInTransaction({
+          ...metadata,
+          runId,
+          type: "approval.resolved",
+          payload: { resolution },
+        });
+      }),
+    );
+  }
+
   cancelRun(runId: string, reason: string, metadata: EventMetadata): RunEvent {
     return this.#finishRun(
       runId,
@@ -467,6 +515,13 @@ export class SqliteEventStore {
         run = {
           ...run,
           status: "waiting_approval",
+          updatedAt: event.timestamp,
+          revision: run.revision + 1,
+        };
+      } else if (event.type === "approval.resolved") {
+        run = {
+          ...run,
+          status: "running",
           updatedAt: event.timestamp,
           revision: run.revision + 1,
         };

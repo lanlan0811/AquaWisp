@@ -115,6 +115,10 @@ export class ToolPolicyEvaluator {
   ): ToolAuthorizationResult {
     const id = this.#ids.nextApprovalId();
     const requestedAt = this.#clock.now().toISOString();
+    const riskReason =
+      reasonCode === toolCatalog.decisionCodes.boundaryApproval
+        ? "操作目标跨越了当前工作区、秘密或平台安全边界。"
+        : "当前运行模式不会自动放行该风险等级的操作。";
     return {
       decision: {
         outcome: "requires_approval",
@@ -129,8 +133,8 @@ export class ToolPolicyEvaluator {
         status: "pending",
         actionType: action.toolName,
         target: target.description,
-        riskReason: reasonCode,
-        impact: `风险等级：${getToolDefinition(action.toolName)?.riskLevel ?? "unknown"}`,
+        riskReason,
+        impact: `如果允许，沧渡将对“${target.description}”执行 ${action.toolName}；授权只覆盖本次精确范围。`,
         requestedAt,
         resolvedAt: null,
       },

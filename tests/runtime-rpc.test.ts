@@ -7,7 +7,12 @@ import {
   type RunEvent,
 } from "@aquawisp/contracts";
 import { RuntimeProcessClient } from "@aquawisp/desktop";
-import { DeterministicModel } from "@aquawisp/runtime";
+import {
+  DeterministicModel,
+  DeterministicVerifier,
+  EchoSimulationExecutor,
+  type PolicyPort,
+} from "@aquawisp/runtime";
 import { handleRuntimeRpcRequest, RuntimeRunService } from "@aquawisp/runtime/process-host";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -182,6 +187,141 @@ describe("M5 runtime RPC", () => {
       });
       await expect(start).resolves.toMatchObject({ ok: true, result: { status: "cancelled" } });
       expect(events.at(-1)).toMatchObject({ type: "run.cancelled", runId });
+    } finally {
+      service.close();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("resolves an approval and reuses only its exact grant within the same session", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aquawisp-runtime-approval-"));
+    const events: RunEvent[] = [];
+    let approvalCounter = 0;
+    let notifyApproval:
+      ((event: Extract<RunEvent, { type: "approval.required" }>) => void) | undefined;
+    const approvalRequired = new Promise<Extract<RunEvent, { type: "approval.required" }>>(
+      (resolvePromise) => {
+        notifyApproval = resolvePromise;
+      },
+    );
+    const policy: PolicyPort = {
+      authorize(action) {
+        approvalCounter += 1;
+        const approvalId = `approval-rpc-${approvalCounter.toString()}`;
+        return Promise.resolve({
+          decision: {
+            outcome: "requires_approval",
+            reasonCode: "outside_workspace",
+            humanSummary: "该动作会写入工作区之外。",
+            approvalId,
+          },
+          approvalRequest: {
+            id: approvalId,
+            runId: action.runId,
+            actionId: action.id,
+            status: "pending",
+            actionType: action.toolName,
+            target: "工作区外的报告.txt",
+            riskReason: "目标不在当前工作区内",
+            impact: "将创建或覆盖指定文件",
+            requestedAt: "2026-09-02T00:00:00.000Z",
+            resolvedAt: null,
+          },
+        });
+      },
+    };
+    const service = new RuntimeRunService({
+      workingDirectory: directory,
+      onEvent: (message) => {
+        events.push(message.event);
+        if (message.event.type === "approval.required") notifyApproval?.(message.event);
+      },
+      createModel: () =>
+        new DeterministicModel([
+          [
+            {
+              kind: "decision",
+              decision: {
+                kind: "action",
+                action: {
+                  toolName: "simulation.echo",
+                  toolRevision: "1",
+                  input: { value: "需要审批" },
+                  sideEffect: true,
+                },
+              },
+            },
+          ],
+          [{ kind: "decision", decision: { kind: "final", content: "审批后完成" } }],
+        ]),
+      policy,
+      executor: new EchoSimulationExecutor(),
+      verifier: new DeterministicVerifier(),
+    });
+    const startRequest = (requestId: string, userInput: string) =>
+      runtimeRpcRequestSchema.parse({
+        protocolVersion: 1,
+        requestId,
+        method: "runtime.run.start",
+        params: {
+          sessionId: "session-approval-rpc",
+          userInput,
+          providerId: "bigmodel",
+          modelId: "glm-5.3",
+          protocol: "chat_completions",
+          reasoningLevel: "max",
+          apiKey: "fixture-key",
+        },
+      });
+    try {
+      const firstStart = service.handle(startRequest("rpc-approval-start-1", "第一次操作"));
+      const required = await approvalRequired;
+      const mismatched = await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "rpc-approval-mismatch",
+          method: "runtime.approval.resolve",
+          params: {
+            approvalId: "approval-not-pending",
+            runId: required.runId,
+            decision: "approve",
+            rememberForSession: false,
+          },
+        }),
+      );
+      expect(mismatched).toMatchObject({ ok: false, error: { code: "approval_not_pending" } });
+      const resolution = await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "rpc-approval-resolve",
+          method: "runtime.approval.resolve",
+          params: {
+            approvalId: required.payload.request.id,
+            runId: required.runId,
+            decision: "approve",
+            rememberForSession: true,
+          },
+        }),
+      );
+      expect(resolution).toMatchObject({ ok: true, result: { accepted: true } });
+      await expect(firstStart).resolves.toMatchObject({
+        ok: true,
+        result: { status: "completed", finalOutput: "审批后完成" },
+      });
+
+      const firstEventCount = events.length;
+      await expect(
+        service.handle(startRequest("rpc-approval-start-2", "第二次相同操作")),
+      ).resolves.toMatchObject({ ok: true, result: { status: "completed" } });
+      const firstTypes = events.slice(0, firstEventCount).map(({ type }) => type);
+      const secondTypes = events.slice(firstEventCount).map(({ type }) => type);
+      expect(firstTypes).toEqual(
+        expect.arrayContaining(["approval.required", "approval.resolved", "action.authorized"]),
+      );
+      expect(secondTypes).not.toContain("approval.required");
+      expect(events.find((event) => event.type === "approval.resolved")?.payload).toMatchObject({
+        resolution: { decision: "approve", rememberForSession: true },
+      });
     } finally {
       service.close();
       await rm(directory, { recursive: true, force: true });

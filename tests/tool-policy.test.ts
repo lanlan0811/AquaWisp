@@ -81,6 +81,9 @@ describe("M3 tool policy evaluator", () => {
       status: "pending",
       actionId: "action-policy",
       target: "outside-workspace/file.md",
+      riskReason: "操作目标跨越了当前工作区、秘密或平台安全边界。",
+      impact:
+        "如果允许，沧渡将对“outside-workspace/file.md”执行 filesystem.write；授权只覆盖本次精确范围。",
     });
   });
 

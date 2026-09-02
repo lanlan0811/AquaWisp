@@ -13,6 +13,7 @@ const channels = Object.freeze({
   knowledgeList: "aquawisp:knowledge:list",
   knowledgeAddFiles: "aquawisp:knowledge:add-files",
   knowledgeRemove: "aquawisp:knowledge:remove",
+  approvalResolve: "aquawisp:approval:resolve",
 });
 contextBridge.exposeInMainWorld(
   "aquawisp",
@@ -31,6 +32,9 @@ contextBridge.exposeInMainWorld(
       list: () => ipcRenderer.invoke(channels.knowledgeList),
       addFiles: () => ipcRenderer.invoke(channels.knowledgeAddFiles),
       remove: (request) => ipcRenderer.invoke(channels.knowledgeRemove, request),
+    }),
+    approvals: Object.freeze({
+      resolve: (request) => ipcRenderer.invoke(channels.approvalResolve, request),
     }),
     settings: Object.freeze({
       get: () => ipcRenderer.invoke(channels.settingsGet),

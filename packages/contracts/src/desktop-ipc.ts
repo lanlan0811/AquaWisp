@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { approvalUserDecisionSchema } from "./approval.js";
 import { entityIdSchema } from "./common.js";
 import { runEventSchema } from "./events.js";
 import { knowledgeIngestedFileSchema, knowledgeLibraryStateSchema } from "./knowledge.js";
@@ -28,6 +29,8 @@ export const desktopConversationStartRequestSchema = z
 export const desktopConversationCancelRequestSchema = z.object({ runId: entityIdSchema }).strict();
 export const desktopConversationStartResultSchema = runRecordSchema;
 export const desktopConversationEventSchema = runEventSchema;
+export const desktopApprovalResolveRequestSchema = approvalUserDecisionSchema;
+export const desktopApprovalResolveResultSchema = z.object({ accepted: z.literal(true) }).strict();
 
 export const desktopKnowledgeAddFilesResultSchema = z
   .object({

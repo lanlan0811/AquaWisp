@@ -20,7 +20,8 @@ if (
   typeof channels.conversationEvent !== "string" ||
   typeof channels.knowledgeList !== "string" ||
   typeof channels.knowledgeAddFiles !== "string" ||
-  typeof channels.knowledgeRemove !== "string"
+  typeof channels.knowledgeRemove !== "string" ||
+  typeof channels.approvalResolve !== "string"
 ) {
   throw new Error("Desktop IPC channel registry is invalid");
 }
@@ -40,6 +41,7 @@ const channels = Object.freeze({
   knowledgeList: ${JSON.stringify(channels.knowledgeList)},
   knowledgeAddFiles: ${JSON.stringify(channels.knowledgeAddFiles)},
   knowledgeRemove: ${JSON.stringify(channels.knowledgeRemove)},
+  approvalResolve: ${JSON.stringify(channels.approvalResolve)},
 });
 contextBridge.exposeInMainWorld(
   "aquawisp",
@@ -58,6 +60,9 @@ contextBridge.exposeInMainWorld(
       list: () => ipcRenderer.invoke(channels.knowledgeList),
       addFiles: () => ipcRenderer.invoke(channels.knowledgeAddFiles),
       remove: (request) => ipcRenderer.invoke(channels.knowledgeRemove, request),
+    }),
+    approvals: Object.freeze({
+      resolve: (request) => ipcRenderer.invoke(channels.approvalResolve, request),
     }),
     settings: Object.freeze({
       get: () => ipcRenderer.invoke(channels.settingsGet),

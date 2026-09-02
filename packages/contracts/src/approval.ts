@@ -4,6 +4,7 @@ import { entityIdSchema, timestampSchema } from "./common.js";
 
 export const authorizationOutcomeSchema = z.enum(["allowed", "denied", "requires_approval"]);
 export const approvalStatusSchema = z.enum(["pending", "approved", "denied", "expired"]);
+export const approvalChoiceSchema = z.enum(["approve", "deny"]);
 
 export const authorizationDecisionSchema = z
   .object({
@@ -38,5 +39,25 @@ export const approvalRequestSchema = z
   })
   .strict();
 
+export const approvalUserDecisionSchema = z
+  .object({
+    approvalId: entityIdSchema,
+    runId: entityIdSchema,
+    decision: approvalChoiceSchema,
+    rememberForSession: z.boolean(),
+  })
+  .strict()
+  .refine(({ decision, rememberForSession }) => decision === "approve" || !rememberForSession, {
+    message: "A denied approval cannot be remembered as an allowance",
+    path: ["rememberForSession"],
+  });
+
+export const approvalResolutionSchema = approvalUserDecisionSchema.safeExtend({
+  actionId: entityIdSchema,
+  resolvedAt: timestampSchema,
+});
+
 export type AuthorizationDecision = z.infer<typeof authorizationDecisionSchema>;
 export type ApprovalRequest = z.infer<typeof approvalRequestSchema>;
+export type ApprovalUserDecision = z.infer<typeof approvalUserDecisionSchema>;
+export type ApprovalResolution = z.infer<typeof approvalResolutionSchema>;
