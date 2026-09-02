@@ -81,6 +81,7 @@ npm run smoke
 本地 MCP server 的注册表与安全边界见 [stdio MCP 客户端](docs/mcp.md)。
 API key 的系统加密与 renderer 权限边界见 [密钥存储与 IPC 边界](docs/secrets.md)。
 模型、协议、思考强度、模式持久化和设置页行为见 [桌面端设置与密钥边界](docs/desktop-settings.md)。
+真实模型流式对话、停止操作和进程间数据边界见 [桌面端流式对话](docs/desktop-conversation.md)。
 内嵌 webview 与 CDP 的安全边界见 [可视浏览器宿主](docs/browser-host.md)。
 同文件持久向量检索实现见 [SQLite 持久向量索引](docs/sqlite-vector.md)。
 本地文件格式、Office/PDF 抽取与资源边界见 [本地文件入库抽取](docs/ingestion.md)。

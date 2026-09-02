@@ -37,6 +37,13 @@ describe("M5 design-system desktop renderer", () => {
     expect(markup).not.toContain("fixture-secret");
     expect(desktopRendererScript).toContain("api.settings.set");
     expect(desktopRendererScript).toContain("api.secrets.has");
+    expect(desktopRendererScript).toContain("api.conversation.start");
+    expect(desktopRendererScript).toContain("api.conversation.cancel");
+    expect(desktopRendererScript).toContain("api.conversation.onEvent");
+    expect(desktopRendererScript).toContain(
+      "activeAssistant.textContent += runEvent.payload.delta",
+    );
+    expect(desktopRendererScript).not.toContain("activeAssistant.innerHTML");
   });
 
   it("builds a syntactically valid nonce-restricted renderer document", () => {

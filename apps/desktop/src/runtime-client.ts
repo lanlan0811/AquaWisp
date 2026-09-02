@@ -3,8 +3,9 @@ import { createInterface } from "node:readline";
 
 import {
   runtimeRpcRequestSchema,
-  runtimeRpcResponseSchema,
-  type RuntimeRpcRequest,
+  runtimeRpcMessageSchema,
+  type RuntimeRpcCommand,
+  type RuntimeRpcEvent,
   type RuntimeRpcResponse,
 } from "@aquawisp/contracts";
 
@@ -16,6 +17,7 @@ export interface RuntimeProcessClientOptions {
   readonly requestTimeoutMs: number;
   readonly maxLineBytes: number;
   readonly maxStderrBytes: number;
+  readonly onEvent?: (event: RuntimeRpcEvent) => void;
 }
 
 interface PendingRequest {
@@ -79,21 +81,27 @@ export class RuntimeProcessClient {
     });
   }
 
-  request(method: RuntimeRpcRequest["method"]): Promise<RuntimeRpcResponse> {
+  request(
+    input: "runtime.ping" | "runtime.shutdown" | RuntimeRpcCommand,
+    timeoutMs = this.#options.requestTimeoutMs,
+  ): Promise<RuntimeRpcResponse> {
     const child = this.#process;
     if (child === undefined) throw new Error("Runtime process is not started");
+    if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
+      throw new Error("Runtime request timeout must be a positive integer");
+    }
     this.#counter += 1;
+    const command = typeof input === "string" ? { method: input, params: {} } : input;
     const request = runtimeRpcRequestSchema.parse({
       protocolVersion: 1,
       requestId: `desktop-rpc-${this.#counter.toString().padStart(6, "0")}`,
-      method,
-      params: {},
+      ...command,
     });
     return new Promise<RuntimeRpcResponse>((resolvePromise, rejectPromise) => {
       const timer = setTimeout(() => {
         this.#pending.delete(request.requestId);
         rejectPromise(new Error(`Runtime request timed out: ${request.method}`));
-      }, this.#options.requestTimeoutMs);
+      }, timeoutMs);
       this.#pending.set(request.requestId, {
         resolve: resolvePromise,
         reject: rejectPromise,
@@ -126,7 +134,12 @@ export class RuntimeProcessClient {
     }
     let response: RuntimeRpcResponse;
     try {
-      response = runtimeRpcResponseSchema.parse(JSON.parse(line) as unknown);
+      const message = runtimeRpcMessageSchema.parse(JSON.parse(line) as unknown);
+      if ("kind" in message) {
+        this.#options.onEvent?.(message);
+        return;
+      }
+      response = message;
     } catch (error) {
       this.#rejectAll(new Error("Runtime emitted an invalid RPC response", { cause: error }));
       this.#process?.kill();

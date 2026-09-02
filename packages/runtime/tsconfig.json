@@ -5,6 +5,11 @@
     "rootDir": "src",
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"],
-  "references": [{ "path": "../context" }, { "path": "../contracts" }, { "path": "../model" }]
+  "include": ["src/**/*.ts", "src/**/*.json"],
+  "references": [
+    { "path": "../context" },
+    { "path": "../contracts" },
+    { "path": "../model" },
+    { "path": "../models-catalog" }
+  ]
 }

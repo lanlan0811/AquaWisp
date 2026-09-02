@@ -13,4 +13,4 @@ The renderer has no read or decrypt method. Electron main schema-validates every
 
 The preload source is generated deterministically from that same configuration. `npm run preload` updates it, `npm run preload:check` detects drift, and the desktop build copies it to `dist` only after the check passes. The window keeps `contextIsolation: true`, `sandbox: true`, and `nodeIntegration: false`, and denies new windows and page navigation.
 
-When the runtime later needs a provider key, it must request that one value through a new controlled and auditable main-to-runtime request. It must never receive the entire secret registry or keep a permanent plaintext copy.
+When a model Run starts, Electron main decrypts only the single provider key referenced by the active settings and passes it in one schema-bound request over the private stdio channel. The renderer never sees plaintext. Runtime uses it only to construct an in-memory model client and never writes it to events, SQLite, responses, or logs. Runtime never receives the entire secret registry or keeps a permanent plaintext copy.

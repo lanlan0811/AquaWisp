@@ -38,9 +38,9 @@ export function createDesktopMarkup(state: DesktopViewState): string {
         `<option value="${escapeHtml(model.id)}" data-provider="${escapeHtml(model.providerId)}" data-protocols="${escapeHtml(model.supportedProtocols.join(","))}" data-levels="${escapeHtml(model.reasoning.levels.map(({ id }) => id).join(","))}"${model.id === state.modelId ? " selected" : ""}>${escapeHtml(model.name)}</option>`,
     )
     .join("");
-  return `<main class="app-shell"><aside class="sidebar"><button class="new-session">${icon("plus")}新建会话</button><nav><button class="nav active" data-view="conversation">${icon("chat")}会话</button><button class="nav" data-view="knowledge">${icon("library")}知识库</button><button class="nav" data-view="settings">${icon("settings")}设置</button></nav><footer><span data-mode-label>${label}</span> · <span data-runtime-label>${runtimeLabel}</span></footer></aside><section class="workspace"><section class="conversation" data-view-panel="conversation"><header>${escapeHtml(state.workspaceName)}<span data-model-label>${escapeHtml(state.modelName)}</span></header><article class="assistant-message"><b>沧</b><p>你好，我是沧渡。你可以让我采集资料、整理知识库或生成文档。</p></article><section class="input-card"><textarea placeholder="帮你采集资料、整理知识库、生成文档报告……"></textarea><button class="send" aria-label="${state.running ? "停止" : "发送"}">${icon(state.running ? "stop" : "send")}</button></section></section><section class="knowledge-view" data-view-panel="knowledge" hidden><header><h1>知识库</h1><button class="secondary">${icon("plus")}添加文件</button></header><div class="empty-state">${icon("library")}<h2>尚未加载知识库列表</h2><p>连接 runtime 后，文档、分段与索引状态会显示在这里。</p></div></section><section class="settings-view" data-view-panel="settings" hidden><header><h1>设置</h1></header><form data-settings-form data-secret-name="${escapeHtml(state.secretName)}"><label>模型供应商<select name="providerId">${providers}</select></label><label>默认模型<select name="modelId">${models}</select></label><label>API 协议<select name="protocol"><option value="chat_completions"${state.protocol === "chat_completions" ? " selected" : ""}>Chat Completions</option><option value="responses"${state.protocol === "responses" ? " selected" : ""}>Responses</option></select></label><label>默认思考强度<select name="reasoningLevel"><option value="${escapeHtml(state.reasoningLevel)}">${escapeHtml(state.reasoningLevel)}</option></select></label><label>API Key<input name="apiKey" type="password" autocomplete="new-password" placeholder="已加密保存的 key 不会回显"></label><label>执行模式<select name="mode"><option value="plan"${state.mode === "plan" ? " selected" : ""}>计划</option><option value="work"${state.mode === "work" ? " selected" : ""}>工作</option><option value="full_access"${state.mode === "full_access" ? " selected" : ""}>完全访问</option></select></label><div class="settings-actions"><span data-settings-status>尚未检查密钥</span><button class="primary" type="submit">保存设置</button></div></form></section></section>${browserPanel}</main>`;
+  return `<main class="app-shell"><aside class="sidebar"><button class="new-session" data-new-session>${icon("plus")}新建会话</button><nav><button class="nav active" data-view="conversation">${icon("chat")}会话</button><button class="nav" data-view="knowledge">${icon("library")}知识库</button><button class="nav" data-view="settings">${icon("settings")}设置</button></nav><footer><span data-mode-label>${label}</span> · <span data-runtime-label>${runtimeLabel}</span></footer></aside><section class="workspace"><section class="conversation" data-view-panel="conversation"><header>${escapeHtml(state.workspaceName)}<span data-model-label>${escapeHtml(state.modelName)}</span></header><section class="message-list" data-conversation-messages aria-live="polite"><article class="assistant-message"><b>沧</b><p>你好，我是沧渡。你可以让我采集资料、整理知识库或生成文档。</p></article></section><section class="input-card"><textarea data-conversation-input placeholder="帮你采集资料、整理知识库、生成文档报告……"></textarea><button class="send" data-conversation-send data-running="${state.running ? "true" : "false"}" aria-label="${state.running ? "停止" : "发送"}"><span data-send-icon${state.running ? " hidden" : ""}>${icon("send")}</span><span data-stop-icon${state.running ? "" : " hidden"}>${icon("stop")}</span></button></section></section><section class="knowledge-view" data-view-panel="knowledge" hidden><header><h1>知识库</h1><button class="secondary">${icon("plus")}添加文件</button></header><div class="empty-state">${icon("library")}<h2>尚未加载知识库列表</h2><p>连接 runtime 后，文档、分段与索引状态会显示在这里。</p></div></section><section class="settings-view" data-view-panel="settings" hidden><header><h1>设置</h1></header><form data-settings-form data-secret-name="${escapeHtml(state.secretName)}"><label>模型供应商<select name="providerId">${providers}</select></label><label>默认模型<select name="modelId">${models}</select></label><label>API 协议<select name="protocol"><option value="chat_completions"${state.protocol === "chat_completions" ? " selected" : ""}>Chat Completions</option><option value="responses"${state.protocol === "responses" ? " selected" : ""}>Responses</option></select></label><label>默认思考强度<select name="reasoningLevel"><option value="${escapeHtml(state.reasoningLevel)}">${escapeHtml(state.reasoningLevel)}</option></select></label><label>API Key<input name="apiKey" type="password" autocomplete="new-password" placeholder="已加密保存的 key 不会回显"></label><label>执行模式<select name="mode"><option value="plan"${state.mode === "plan" ? " selected" : ""}>计划</option><option value="work"${state.mode === "work" ? " selected" : ""}>工作</option><option value="full_access"${state.mode === "full_access" ? " selected" : ""}>完全访问</option></select></label><div class="settings-actions"><span data-settings-status>尚未检查密钥</span><button class="primary" type="submit">保存设置</button></div></form></section></section>${browserPanel}</main>`;
 }
-export const desktopStyles = `:root{--brand:#0e7490;--send:#34b3a0;--side:#f7f7f8;--border:#e8e8ea;--text:#1f2933;font-family:system-ui,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}body{margin:0;color:var(--text)}[hidden]{display:none!important}button,select,input,textarea{font:inherit}.app-shell{display:flex;min-height:100vh}.sidebar{box-sizing:border-box;width:220px;flex:none;background:var(--side);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column}.new-session,.send,.primary{border:0;border-radius:6px;color:#fff}.new-session{background:var(--brand);padding:8px 16px;font-weight:600}.sidebar nav{display:grid;gap:6px;margin-top:16px}.nav{display:flex;gap:8px;border:0;background:transparent;padding:10px;text-align:left}.nav.active{border-left:3px solid var(--brand);color:var(--brand)}footer{margin-top:auto;font-size:12px}.workspace{flex:1;min-width:0}.conversation,.knowledge-view,.settings-view{height:100vh;box-sizing:border-box;overflow:auto}.conversation header,.knowledge-view header,.settings-view header{height:44px;box-sizing:border-box;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;align-items:center}.knowledge-view h1,.settings-view h1{font-size:16px;margin:0}.assistant-message{display:flex;gap:8px;max-width:860px;margin:24px auto}.assistant-message p{padding:12px 16px;border:1px solid var(--border);border-radius:4px 16px 16px}.input-card{width:min(800px,calc(100% - 48px));margin:40vh auto 24px;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex}.input-card:focus-within{border-color:var(--brand);box-shadow:0 2px 16px rgba(14,116,144,.12)}textarea{flex:1;border:0;min-height:80px;resize:vertical}.send{width:36px;height:36px;background:var(--send)}.empty-state{max-width:520px;margin:18vh auto;text-align:center;color:#667085}.empty-state>svg{width:42px;height:42px}.settings-view form{max-width:680px;margin:28px auto;display:grid;gap:18px}.settings-view label{display:grid;gap:7px;font-weight:600}.settings-view select,.settings-view input{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fff}.settings-actions{display:flex;align-items:center;justify-content:space-between;color:#667085}.primary{background:var(--brand);padding:9px 16px;font-weight:600}.secondary{border:1px solid var(--border);border-radius:6px;background:#fff;padding:7px 12px;display:flex;gap:6px}.browser-panel{width:280px;flex:none;border-left:1px solid var(--border);display:flex;flex-direction:column}.browser-panel header{height:44px;padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);font-weight:600}.browser-address{padding:8px;border-bottom:1px solid var(--border)}.browser-address input{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 8px}.browser-panel webview{flex:1;min-height:480px}svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}`;
+export const desktopStyles = `:root{--brand:#0e7490;--send:#34b3a0;--side:#f7f7f8;--border:#e8e8ea;--text:#1f2933;font-family:system-ui,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}body{margin:0;color:var(--text)}[hidden]{display:none!important}button,select,input,textarea{font:inherit}.app-shell{display:flex;min-height:100vh}.sidebar{box-sizing:border-box;width:220px;flex:none;background:var(--side);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column}.new-session,.send,.primary{border:0;border-radius:6px;color:#fff}.new-session{background:var(--brand);padding:8px 16px;font-weight:600}.sidebar nav{display:grid;gap:6px;margin-top:16px}.nav{display:flex;gap:8px;border:0;background:transparent;padding:10px;text-align:left}.nav.active{border-left:3px solid var(--brand);color:var(--brand)}footer{margin-top:auto;font-size:12px}.workspace{flex:1;min-width:0}.conversation,.knowledge-view,.settings-view{height:100vh;box-sizing:border-box;overflow:auto}.conversation{display:flex;flex-direction:column}.conversation header,.knowledge-view header,.settings-view header{height:44px;box-sizing:border-box;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;align-items:center}.knowledge-view h1,.settings-view h1{font-size:16px;margin:0}.message-list{flex:1;overflow:auto;padding:0 24px}.assistant-message,.user-message{display:flex;gap:8px;max-width:860px;margin:24px auto}.assistant-message b,.user-message b{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--brand);color:#fff}.assistant-message p,.user-message p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:12px 16px;border:1px solid var(--border);border-radius:4px 16px 16px}.user-message{flex-direction:row-reverse}.user-message b{background:#475467}.user-message p{background:#ecfdf8;border-color:#c6eee5;border-radius:16px 4px 16px 16px}.input-card{box-sizing:border-box;width:min(800px,calc(100% - 48px));margin:12px auto 24px;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex}.input-card:focus-within{border-color:var(--brand);box-shadow:0 2px 16px rgba(14,116,144,.12)}textarea{flex:1;border:0;min-height:80px;resize:vertical;outline:0}.send{width:36px;height:36px;background:var(--send);display:grid;place-items:center}.send[data-running=true]{background:#b42318}.send span{display:grid;place-items:center}.empty-state{max-width:520px;margin:18vh auto;text-align:center;color:#667085}.empty-state>svg{width:42px;height:42px}.settings-view form{max-width:680px;margin:28px auto;display:grid;gap:18px}.settings-view label{display:grid;gap:7px;font-weight:600}.settings-view select,.settings-view input{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fff}.settings-actions{display:flex;align-items:center;justify-content:space-between;color:#667085}.primary{background:var(--brand);padding:9px 16px;font-weight:600}.secondary{border:1px solid var(--border);border-radius:6px;background:#fff;padding:7px 12px;display:flex;gap:6px}.browser-panel{width:280px;flex:none;border-left:1px solid var(--border);display:flex;flex-direction:column}.browser-panel header{height:44px;padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);font-weight:600}.browser-address{padding:8px;border-bottom:1px solid var(--border)}.browser-address input{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 8px}.browser-panel webview{flex:1;min-height:480px}svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}`;
 export const desktopRendererScript = `(() => {
   const api = window.aquawisp;
   const form = document.querySelector("[data-settings-form]");
@@ -51,7 +51,128 @@ export const desktopRendererScript = `(() => {
   const mode = form?.elements.namedItem("mode");
   const apiKey = form?.elements.namedItem("apiKey");
   const status = document.querySelector("[data-settings-status]");
+  const messages = document.querySelector("[data-conversation-messages]");
+  const conversationInput = document.querySelector("[data-conversation-input]");
+  const conversationButton = document.querySelector("[data-conversation-send]");
+  const newSessionButton = document.querySelector("[data-new-session]");
+  const sendIcon = document.querySelector("[data-send-icon]");
+  const stopIcon = document.querySelector("[data-stop-icon]");
   const modeLabels = { plan: "计划", work: "工作", full_access: "完全访问" };
+  let sessionId = "session-" + crypto.randomUUID();
+  let activeRunId;
+  let activeAssistant;
+  let running = false;
+  let cancellationRequested = false;
+  const appendMessage = (role, content) => {
+    if (!(messages instanceof HTMLElement)) return undefined;
+    const article = document.createElement("article");
+    article.className = role === "user" ? "user-message" : "assistant-message";
+    const avatar = document.createElement("b");
+    avatar.textContent = role === "user" ? "你" : "沧";
+    const paragraph = document.createElement("p");
+    paragraph.textContent = content;
+    article.append(avatar, paragraph);
+    messages.append(article);
+    messages.scrollTop = messages.scrollHeight;
+    return paragraph;
+  };
+  const setRunning = (nextRunning) => {
+    running = nextRunning;
+    if (conversationButton instanceof HTMLButtonElement) {
+      conversationButton.dataset.running = String(nextRunning);
+      conversationButton.setAttribute("aria-label", nextRunning ? "停止" : "发送");
+      conversationButton.disabled = nextRunning && activeRunId === undefined;
+    }
+    if (newSessionButton instanceof HTMLButtonElement) newSessionButton.disabled = nextRunning;
+    if (sendIcon instanceof HTMLElement) sendIcon.hidden = nextRunning;
+    if (stopIcon instanceof HTMLElement) stopIcon.hidden = !nextRunning;
+  };
+  const finishRun = () => {
+    activeRunId = undefined;
+    activeAssistant = undefined;
+    cancellationRequested = false;
+    setRunning(false);
+  };
+  api.conversation.onEvent((runEvent) => {
+    if (runEvent.type === "run.created") {
+      if (!running || activeRunId !== undefined) return;
+      activeRunId = runEvent.runId;
+      if (conversationButton instanceof HTMLButtonElement) conversationButton.disabled = false;
+      return;
+    }
+    if (!running || runEvent.runId !== activeRunId) return;
+    if (runEvent.type === "model.delta") {
+      if (!(activeAssistant instanceof HTMLParagraphElement)) activeAssistant = appendMessage("assistant", "");
+      if (activeAssistant instanceof HTMLParagraphElement) activeAssistant.textContent += runEvent.payload.delta;
+      if (messages instanceof HTMLElement) messages.scrollTop = messages.scrollHeight;
+    } else if (runEvent.type === "run.completed") {
+      if (!(activeAssistant instanceof HTMLParagraphElement)) activeAssistant = appendMessage("assistant", runEvent.payload.finalOutput);
+      finishRun();
+    } else if (runEvent.type === "run.failed") {
+      const failure = "运行失败：" + runEvent.payload.message;
+      if (activeAssistant instanceof HTMLParagraphElement) activeAssistant.textContent += (activeAssistant.textContent ? "\\n\\n" : "") + failure;
+      else appendMessage("assistant", failure);
+      finishRun();
+    } else if (runEvent.type === "run.cancelled") {
+      const cancelled = "本次生成已停止。";
+      if (activeAssistant instanceof HTMLParagraphElement) activeAssistant.textContent += (activeAssistant.textContent ? "\\n\\n" : "") + cancelled;
+      else appendMessage("assistant", cancelled);
+      finishRun();
+    }
+  });
+  const submitConversation = async () => {
+    if (!(conversationInput instanceof HTMLTextAreaElement)) return;
+    if (running) {
+      if (activeRunId === undefined || cancellationRequested) return;
+      cancellationRequested = true;
+      if (conversationButton instanceof HTMLButtonElement) conversationButton.disabled = true;
+      try {
+        await api.conversation.cancel({ runId: activeRunId });
+      } catch (error) {
+        cancellationRequested = false;
+        if (conversationButton instanceof HTMLButtonElement) conversationButton.disabled = false;
+        appendMessage("assistant", error instanceof Error ? error.message : "停止请求失败");
+      }
+      return;
+    }
+    const userInput = conversationInput.value.trim();
+    if (!userInput) return;
+    appendMessage("user", userInput);
+    conversationInput.value = "";
+    activeAssistant = appendMessage("assistant", "");
+    cancellationRequested = false;
+    setRunning(true);
+    try {
+      const result = await api.conversation.start({ sessionId, userInput });
+      if (running && result.status === "completed") {
+        if (activeAssistant instanceof HTMLParagraphElement && !activeAssistant.textContent) activeAssistant.textContent = result.finalOutput ?? "";
+        finishRun();
+      } else if (running && result.status === "failed") {
+        if (activeAssistant instanceof HTMLParagraphElement && !activeAssistant.textContent) activeAssistant.textContent = "运行失败：" + (result.errorMessage ?? result.errorCode ?? "未知错误");
+        finishRun();
+      } else if (running && result.status === "cancelled") {
+        if (activeAssistant instanceof HTMLParagraphElement && !activeAssistant.textContent) activeAssistant.textContent = "本次生成已停止。";
+        finishRun();
+      }
+    } catch (error) {
+      if (activeAssistant instanceof HTMLParagraphElement && !activeAssistant.textContent) activeAssistant.textContent = error instanceof Error ? error.message : "对话请求失败";
+      finishRun();
+    }
+  };
+  conversationButton?.addEventListener("click", () => { void submitConversation(); });
+  conversationInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      void submitConversation();
+    }
+  });
+  newSessionButton?.addEventListener("click", () => {
+    if (running || !(messages instanceof HTMLElement)) return;
+    sessionId = "session-" + crypto.randomUUID();
+    messages.replaceChildren();
+    appendMessage("assistant", "你好，我是沧渡。你可以让我采集资料、整理知识库或生成文档。");
+    if (conversationInput instanceof HTMLTextAreaElement) conversationInput.focus();
+  });
   const showView = (name) => {
     document.querySelectorAll("[data-view-panel]").forEach((panel) => { panel.hidden = panel.dataset.viewPanel !== name; });
     document.querySelectorAll("[data-view]").forEach((button) => { button.classList.toggle("active", button.dataset.view === name); });

@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 import { entityIdSchema } from "./common.js";
+import { runEventSchema } from "./events.js";
+import { runRecordSchema } from "./run.js";
 
 export const desktopSecretSetRequestSchema = z
   .object({
@@ -18,6 +20,13 @@ export const desktopSecretPresenceResultSchema = z.object({ present: z.boolean()
 export const desktopSecretDeleteResultSchema = z.object({ deleted: z.boolean() }).strict();
 
 export const desktopRuntimeStatusResultSchema = z.object({ connected: z.boolean() }).strict();
+
+export const desktopConversationStartRequestSchema = z
+  .object({ sessionId: entityIdSchema, userInput: z.string().min(1).max(1_048_576) })
+  .strict();
+export const desktopConversationCancelRequestSchema = z.object({ runId: entityIdSchema }).strict();
+export const desktopConversationStartResultSchema = runRecordSchema;
+export const desktopConversationEventSchema = runEventSchema;
 
 export const desktopSettingsSchema = z
   .object({

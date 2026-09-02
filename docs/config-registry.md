@@ -19,6 +19,7 @@ AquaWisp avoids scattered behavior constants. Values that vary by package, platf
 | `packages/kb/src/kb-config.data.json`             | knowledge-base runtime     | Chunking, embedding transport, hybrid ranking, candidate and highlight limits             | zod cross-field validation plus indexing/retrieval tests        |
 | `evals/knowledge-retrieval-baseline.json`         | knowledge retrieval evals  | Versioned Chinese corpus, Recall@3 cases and acceptance threshold                         | zod schema plus hybrid retrieval quality test                   |
 | `apps/desktop/src/desktop-config.data.json`       | Electron main/preload      | Window, runtime, settings defaults, environment, secret limits and IPC channels           | zod schema, preload drift check and packaged-process tests      |
+| `packages/runtime/src/runtime-host.data.json`     | independent runtime host   | SQLite event filename and maximum agent cycles                                            | zod schema plus runtime run/cancellation integration tests      |
 | `vitest.config.ts`                                | repository tooling         | Cross-platform test scheduling and timeout budget                                         | full verification on Windows and macOS CI                       |
 
 `scripts/project-config.mjs` contains the sole bootstrap path to `config/project.json`; this path cannot be stored inside the registry it is used to locate. All downstream tooling resolves paths from the repository root and rejects escapes.

@@ -37,3 +37,4 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Incremental FTS/vector indexing plus full-text, semantic, and RRF hybrid search with source attribution and highlights.
 - Unified file-ingestion pipeline and a versioned Chinese Recall@3 baseline covering the complete M4 format-to-source retrieval path.
 - Atomic non-secret desktop settings, catalog-validated model/reasoning choices, nonce-restricted interactive settings UI, and write-only encrypted API-key handling.
+- Catalog-backed production runtime model adapter and desktop conversation bridge with schema-validated streaming events, user cancellation, bounded run timeouts, and API-key non-persistence tests.

@@ -13,4 +13,4 @@ renderer 没有读取或解密方法。Electron main 对每个 IPC payload 进�
 
 preload 源文件由同一配置确定性生成。`npm run preload` 更新源文件，`npm run preload:check` 检查漂移，桌面构建只在检查通过后复制到 `dist`。窗口保持 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`，拒绝新窗口和页面导航。
 
-runtime 后续需要 provider key 时，必须通过新增的受控、可审计 main↔runtime 请求按次取得；不能把整个密钥注册表或永久明文副本传给 runtime。
+启动模型 Run 时，Electron main 只解密当前设置引用的单个 provider key，并把它随一次受 schema 约束的私有 stdio 请求传给 runtime。renderer 永远看不到明文；runtime 仅在内存中构造模型客户端，不把 key 写入事件、SQLite、响应或日志。它不会接收整个密钥注册表，也不会保留永久明文副本。

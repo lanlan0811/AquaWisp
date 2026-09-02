@@ -4,6 +4,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  desktopConversationCancelRequestSchema,
+  desktopConversationEventSchema,
+  desktopConversationStartRequestSchema,
+  desktopConversationStartResultSchema,
   desktopRuntimeStatusResultSchema,
   desktopSecretDeleteResultSchema,
   desktopSecretMutationResultSchema,
@@ -164,6 +168,17 @@ async function startRuntime(): Promise<boolean> {
     requestTimeoutMs: desktopConfig.runtime.requestTimeoutMs,
     maxLineBytes: desktopConfig.runtime.maxLineBytes,
     maxStderrBytes: desktopConfig.runtime.maxStderrBytes,
+    onEvent: (message) => {
+      const target = BrowserWindow.getAllWindows().find(
+        ({ webContents }) => webContents.id === authorizedWebContentsId,
+      );
+      if (target !== undefined && !target.isDestroyed()) {
+        target.webContents.send(
+          desktopConfig.ipcChannels.conversationEvent,
+          desktopConversationEventSchema.parse(message.event),
+        );
+      }
+    },
   });
   runtime.start();
   try {
@@ -221,6 +236,38 @@ function registerDesktopIpc(secretVault: SecretVault, settingsStore: DesktopSett
   ipcMain.handle(desktopConfig.ipcChannels.settingsSet, async (event, input: unknown) => {
     assertAuthorizedRenderer(event);
     return desktopSettingsSchema.parse(await settingsStore.set(input));
+  });
+  ipcMain.handle(desktopConfig.ipcChannels.conversationStart, async (event, input: unknown) => {
+    assertAuthorizedRenderer(event);
+    if (runtime === undefined) throw new Error("Runtime is not connected");
+    const request = desktopConversationStartRequestSchema.parse(input);
+    const settings = await settingsStore.get();
+    const apiKey = await secretVault.get(settings.secretName);
+    if (apiKey === undefined) throw new Error("Selected provider API key is not configured");
+    const response = await runtime.request(
+      {
+        method: "runtime.run.start",
+        params: {
+          ...request,
+          providerId: settings.providerId,
+          modelId: settings.modelId,
+          protocol: settings.protocol,
+          reasoningLevel: settings.reasoningLevel,
+          apiKey,
+        },
+      },
+      desktopConfig.runtime.runRequestTimeoutMs,
+    );
+    if (!response.ok) throw new Error(response.error.message);
+    return desktopConversationStartResultSchema.parse(response.result);
+  });
+  ipcMain.handle(desktopConfig.ipcChannels.conversationCancel, async (event, input: unknown) => {
+    assertAuthorizedRenderer(event);
+    if (runtime === undefined) throw new Error("Runtime is not connected");
+    const request = desktopConversationCancelRequestSchema.parse(input);
+    const response = await runtime.request({ method: "runtime.run.cancel", params: request });
+    if (!response.ok) throw new Error(response.error.message);
+    return response.result;
   });
 }
 

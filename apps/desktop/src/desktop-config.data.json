@@ -10,6 +10,7 @@
   "runtime": {
     "workingDirectoryName": "runtime",
     "requestTimeoutMs": 10000,
+    "runRequestTimeoutMs": 600000,
     "maxLineBytes": 1048576,
     "maxStderrBytes": 65536,
     "runAsNodeEnvironmentVariable": "ELECTRON_RUN_AS_NODE",
@@ -35,6 +36,9 @@
     "secretHas": "aquawisp:secret:has",
     "secretDelete": "aquawisp:secret:delete",
     "settingsGet": "aquawisp:settings:get",
-    "settingsSet": "aquawisp:settings:set"
+    "settingsSet": "aquawisp:settings:set",
+    "conversationStart": "aquawisp:conversation:start",
+    "conversationCancel": "aquawisp:conversation:cancel",
+    "conversationEvent": "aquawisp:conversation:event"
   }
 }

@@ -20,6 +20,7 @@ const desktopConfigSchema = z
       .object({
         workingDirectoryName: z.string().min(1),
         requestTimeoutMs: z.number().int().positive().max(300_000),
+        runRequestTimeoutMs: z.number().int().positive().max(3_600_000),
         maxLineBytes: z.number().int().positive().max(10_485_760),
         maxStderrBytes: z.number().int().positive().max(1_048_576),
         runAsNodeEnvironmentVariable: environmentNameSchema,
@@ -57,18 +58,14 @@ const desktopConfigSchema = z
         secretDelete: z.string().min(1),
         settingsGet: z.string().min(1),
         settingsSet: z.string().min(1),
+        conversationStart: z.string().min(1),
+        conversationCancel: z.string().min(1),
+        conversationEvent: z.string().min(1),
       })
       .strict()
-      .refine(({ runtimePing, secretSet, secretHas, secretDelete, settingsGet, settingsSet }) => {
-        const channels = [
-          runtimePing,
-          secretSet,
-          secretHas,
-          secretDelete,
-          settingsGet,
-          settingsSet,
-        ];
-        return new Set(channels).size === channels.length;
+      .refine((channels) => {
+        const values = Object.values(channels);
+        return new Set(values).size === values.length;
       }, "Desktop IPC channels must be unique"),
   })
   .strict();

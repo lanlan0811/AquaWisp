@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { entityIdSchema, jsonObjectSchema } from "./common.js";
+import { runEventSchema } from "./events.js";
 
 const runtimeRpcEnvelope = {
   protocolVersion: z.literal(1),
@@ -22,6 +23,30 @@ export const runtimeRpcRequestSchema = z.discriminatedUnion("method", [
       params: z.object({}).strict(),
     })
     .strict(),
+  z
+    .object({
+      ...runtimeRpcEnvelope,
+      method: z.literal("runtime.run.start"),
+      params: z
+        .object({
+          sessionId: entityIdSchema,
+          userInput: z.string().min(1).max(1_048_576),
+          providerId: entityIdSchema,
+          modelId: entityIdSchema,
+          protocol: z.enum(["chat_completions", "responses"]),
+          reasoningLevel: entityIdSchema,
+          apiKey: z.string().min(1).max(16_384),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      ...runtimeRpcEnvelope,
+      method: z.literal("runtime.run.cancel"),
+      params: z.object({ runId: entityIdSchema }).strict(),
+    })
+    .strict(),
 ]);
 
 export const runtimeRpcResponseSchema = z.discriminatedUnion("ok", [
@@ -41,5 +66,22 @@ export const runtimeRpcResponseSchema = z.discriminatedUnion("ok", [
     .strict(),
 ]);
 
+export const runtimeRpcEventSchema = z
+  .object({
+    protocolVersion: z.literal(1),
+    requestId: entityIdSchema,
+    kind: z.literal("event"),
+    event: runEventSchema,
+  })
+  .strict();
+
+export const runtimeRpcMessageSchema = z.union([runtimeRpcResponseSchema, runtimeRpcEventSchema]);
+
 export type RuntimeRpcRequest = z.infer<typeof runtimeRpcRequestSchema>;
 export type RuntimeRpcResponse = z.infer<typeof runtimeRpcResponseSchema>;
+export type RuntimeRpcEvent = z.infer<typeof runtimeRpcEventSchema>;
+export type RuntimeRpcCommand = RuntimeRpcRequest extends infer Request
+  ? Request extends RuntimeRpcRequest
+    ? Pick<Request, "method" | "params">
+    : never
+  : never;
