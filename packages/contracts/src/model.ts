@@ -18,6 +18,13 @@ export const modelDecisionSchema = z.discriminatedUnion("kind", [
 
 export const modelSignalSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("text_delta"), delta: z.string().min(1) }).strict(),
+  z
+    .object({
+      kind: z.literal("stream_recovery"),
+      recoveryAttempt: z.number().int().positive(),
+      priorEventCount: z.number().int().nonnegative(),
+    })
+    .strict(),
   z.object({ kind: z.literal("decision"), decision: modelDecisionSchema }).strict(),
 ]);
 

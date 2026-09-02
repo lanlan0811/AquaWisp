@@ -32,6 +32,7 @@ describe("M2 catalog-backed runtime model port", () => {
       protocol: "chat_completions",
       reasoningLevel: "max",
       apiKey: "fixture-key",
+      maximumRecoveryAttempts: 1,
       fetchImplementation: (input, init) => {
         const requestInit = init ?? {};
         requestedUrl = input instanceof Request ? input.url : input.toString();
@@ -50,7 +51,28 @@ describe("M2 catalog-backed runtime model port", () => {
 
     const signals = await collect(
       port.reason(
-        { runId: "run-1", cycle: 1, userInput: "你好", observations: [] },
+        {
+          runId: "run-1",
+          cycle: 1,
+          userInput: "你好",
+          observations: [],
+          contextItems: [
+            {
+              id: "system-1",
+              kind: "system",
+              content: "系统规则",
+              createdAt: "2026-09-02T00:00:00.000Z",
+              provenanceEventIds: [],
+            },
+            {
+              id: "user-1",
+              kind: "user",
+              content: "你好",
+              createdAt: "2026-09-02T00:00:00.000Z",
+              provenanceEventIds: [],
+            },
+          ],
+        },
         new AbortController().signal,
       ),
     );
@@ -60,7 +82,10 @@ describe("M2 catalog-backed runtime model port", () => {
     expect(requestedBody).toMatchObject({
       model: "glm-5.3",
       stream: true,
-      messages: [{ role: "user", content: "你好" }],
+      messages: [
+        { role: "system", content: "系统规则" },
+        { role: "user", content: "你好" },
+      ],
       thinking: { type: "enabled" },
       reasoning_effort: "max",
     });
@@ -80,7 +105,69 @@ describe("M2 catalog-backed runtime model port", () => {
           protocol: "chat_completions",
           reasoningLevel: "max",
           apiKey: "fixture-key",
+          maximumRecoveryAttempts: 1,
         }),
     ).toThrow("does not belong");
+  });
+
+  it("continues an interrupted stream from the emitted assistant prefix and exposes recovery", async () => {
+    const bodies: unknown[] = [];
+    let requestNumber = 0;
+    const port = new CatalogModelPort({
+      providerId: "moonshot-kimi",
+      modelId: "kimi-k3",
+      protocol: "chat_completions",
+      reasoningLevel: "max",
+      apiKey: "fixture-key",
+      maximumRecoveryAttempts: 1,
+      fetchImplementation: (_input, init) => {
+        if (typeof init?.body !== "string") throw new Error("Expected a JSON request body");
+        bodies.push(JSON.parse(init.body) as unknown);
+        requestNumber += 1;
+        return Promise.resolve(
+          requestNumber === 1
+            ? sseResponse(['data: {"choices":[{"delta":{"content":"未完"}}]}\n\n'])
+            : sseResponse([
+                'data: {"choices":[{"delta":{"content":"成"},"finish_reason":"stop"}]}\n\n',
+                "data: [DONE]\n\n",
+              ]),
+        );
+      },
+    });
+
+    const signals = await collect(
+      port.reason(
+        {
+          runId: "run-recovery",
+          cycle: 1,
+          userInput: "继续测试",
+          observations: [],
+          contextItems: [
+            {
+              id: "user-recovery",
+              kind: "user",
+              content: "继续测试",
+              createdAt: "2026-09-02T00:00:00.000Z",
+              provenanceEventIds: [],
+            },
+          ],
+        },
+        new AbortController().signal,
+      ),
+    );
+
+    expect(bodies).toHaveLength(2);
+    expect(bodies[1]).toMatchObject({
+      messages: [
+        { role: "user", content: "继续测试" },
+        { role: "assistant", content: "未完" },
+      ],
+    });
+    expect(signals).toEqual([
+      { kind: "text_delta", delta: "未完" },
+      { kind: "stream_recovery", recoveryAttempt: 1, priorEventCount: 1 },
+      { kind: "text_delta", delta: "成" },
+      { kind: "decision", decision: { kind: "final", content: "未完成" } },
+    ]);
   });
 });

@@ -34,3 +34,7 @@ Token 估算器、摘要器、工件存储器、摘要 ID 与时钟均由调用�
 - `checkpoint.saved`：检查点 revision、项目顺序、token 数和检查点引用。
 
 两个事件通过 `parentEventId` 连成链，并继承同一 trace。恢复时可从事件库读取最近的 `checkpoint.saved`，再以其中的引用加载完整快照，并按工件引用恢复下一次模型调用需要的上下文。
+
+正式 runtime 已在每个 Run 的 `prepare` 阶段执行这条链路。它从同一 session 的 `run.created`、`run.completed` 与 `action.observed` 事件重建 user、assistant 与不可信 tool 项，当前 Run 的 user 项始终排在历史之后。编译后的 `docs/prompts` 资源会先校验逐文件哈希和聚合 revision，再作为 system 项加入；旧 user/tool 内容不会被提升为 system 权限。
+
+生产预算、字符 token 估算比例、恢复窗口、摘要上限、工具内联上限与目录名统一来自 `runtime-host.data.json`。当前摘要器是确定性的有界抽取器；它保证预算与可恢复性，但不是模型生成的语义摘要。后续替换摘要器时仍须保持同一端口、检查点和事件契约。

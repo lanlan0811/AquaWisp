@@ -16,7 +16,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "resources"
   ],
   "dependencies": {
     "@aquawisp/context": "0.0.0",

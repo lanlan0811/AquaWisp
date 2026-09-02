@@ -243,8 +243,9 @@ describe("M2 OpenAI-compatible streaming client", () => {
 
     expect(events).toEqual([
       { kind: "text_delta", delta: "partial", sequence: 0 },
-      { kind: "text_delta", delta: " resumed", sequence: 1 },
-      { kind: "completed", finishReason: "stop", sequence: 2 },
+      { kind: "stream_recovery", recoveryAttempt: 1, priorEventCount: 1, sequence: 1 },
+      { kind: "text_delta", delta: " resumed", sequence: 2 },
+      { kind: "completed", finishReason: "stop", sequence: 3 },
     ]);
     expect(requestNumber).toBe(2);
   });

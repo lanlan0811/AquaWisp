@@ -1,5 +1,20 @@
 {
   "schemaVersion": 1,
   "databaseFileName": "events.sqlite",
-  "maximumCycles": 16
+  "maximumCycles": 16,
+  "streamRecovery": {
+    "maximumAttempts": 1
+  },
+  "context": {
+    "checkpointDirectoryName": "context-checkpoints",
+    "artifactDirectoryName": "context-artifacts",
+    "charactersPerToken": 2,
+    "maxTokens": 262144,
+    "compressionThresholdRatio": 0.75,
+    "recentWindowTokens": 65536,
+    "maximumSummaryTokens": 8192,
+    "toolInlineTokenLimit": 8192,
+    "artifactPreviewCharacters": 1024,
+    "maximumPromptBundleBytes": 1048576
+  }
 }

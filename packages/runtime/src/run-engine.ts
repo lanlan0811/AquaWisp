@@ -12,6 +12,7 @@ import {
   type RunRecord,
   type RunStage,
 } from "@aquawisp/contracts";
+import type { ContextItem } from "@aquawisp/context";
 
 import { ActionLedger } from "./action-ledger.js";
 import type { EventMetadata } from "./event-store.js";
@@ -22,6 +23,7 @@ import type {
   IdGeneratorPort,
   ModelPort,
   PolicyPort,
+  RunContextPort,
   VerificationPort,
 } from "./ports.js";
 
@@ -34,6 +36,7 @@ export interface RunEngineOptions {
   readonly clock: ClockPort;
   readonly ids: IdGeneratorPort;
   readonly maxCycles: number;
+  readonly context?: RunContextPort;
 }
 
 export interface StartRunRequest {
@@ -51,6 +54,7 @@ export class RunEngine {
   readonly #clock: ClockPort;
   readonly #ids: IdGeneratorPort;
   readonly #maxCycles: number;
+  readonly #context: RunContextPort | undefined;
   readonly #ledger: ActionLedger;
   #traceId = "";
   #lastEventId: string | null = null;
@@ -68,6 +72,7 @@ export class RunEngine {
     this.#clock = options.clock;
     this.#ids = options.ids;
     this.#maxCycles = options.maxCycles;
+    this.#context = options.context;
     this.#ledger = new ActionLedger(options.store);
   }
 
@@ -108,10 +113,11 @@ export class RunEngine {
 
     try {
       this.#enterStage(runId, "prepare", 1);
+      const contextItems = await this.#prepareContext(run);
       for (let cycle = 1; cycle <= this.#maxCycles; cycle += 1) {
         this.#throwIfAborted(abortSignal);
         this.#enterStage(runId, "reason", cycle);
-        const decision = await this.#reason(run, cycle, observations, abortSignal);
+        const decision = await this.#reason(run, cycle, observations, contextItems, abortSignal);
 
         if (decision.kind === "final") {
           this.#enterStage(runId, "verify", cycle);
@@ -184,6 +190,7 @@ export class RunEngine {
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown runtime failure";
+      this.#lastEventId = this.#store.listEvents(runId).at(-1)?.eventId ?? this.#lastEventId;
       const current = this.#store.getRun(runId);
       if (["completed", "failed", "cancelled", "interrupted"].includes(current.status)) {
         return current;
@@ -200,11 +207,12 @@ export class RunEngine {
     run: RunRecord,
     cycle: number,
     observations: readonly Observation[],
+    contextItems: readonly ContextItem[],
     signal: AbortSignal,
   ): Promise<ModelDecision> {
     let decision: ModelDecision | undefined;
     for await (const rawSignal of this.#model.reason(
-      { runId: run.id, cycle, userInput: run.userInput, observations },
+      { runId: run.id, cycle, userInput: run.userInput, observations, contextItems },
       signal,
     )) {
       const modelSignal = modelSignalSchema.parse(rawSignal);
@@ -215,6 +223,18 @@ export class RunEngine {
             runId: run.id,
             type: "model.delta",
             payload: { delta: modelSignal.delta },
+          }),
+        );
+      } else if (modelSignal.kind === "stream_recovery") {
+        this.#record(
+          this.#store.appendEvent({
+            ...this.#metadata(),
+            runId: run.id,
+            type: "model.stream.recovery",
+            payload: {
+              recoveryAttempt: modelSignal.recoveryAttempt,
+              priorEventCount: modelSignal.priorEventCount,
+            },
           }),
         );
       } else if (decision === undefined) {
@@ -235,6 +255,28 @@ export class RunEngine {
       }),
     );
     return decision;
+  }
+
+  async #prepareContext(run: RunRecord): Promise<readonly ContextItem[]> {
+    if (this.#context === undefined) {
+      return [
+        {
+          id: `${run.id}-user`,
+          kind: "user",
+          content: run.userInput,
+          createdAt: run.createdAt,
+          provenanceEventIds: [],
+        },
+      ];
+    }
+    const prepared = await this.#context.prepare({
+      run,
+      traceId: this.#traceId,
+      nextEventId: () => this.#ids.next("event"),
+      now: () => this.#clock.now(),
+    });
+    for (const event of prepared.emittedEvents) this.#record(event);
+    return prepared.items;
   }
 
   #createAction(

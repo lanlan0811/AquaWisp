@@ -4,6 +4,12 @@ export type ModelStreamEvent =
   | { readonly kind: "text_delta"; readonly delta: string; readonly sequence: number }
   | { readonly kind: "reasoning_delta"; readonly delta: string; readonly sequence: number }
   | {
+      readonly kind: "stream_recovery";
+      readonly recoveryAttempt: number;
+      readonly priorEventCount: number;
+      readonly sequence: number;
+    }
+  | {
       readonly kind: "tool_call_delta";
       readonly callId: string;
       readonly name: string | null;

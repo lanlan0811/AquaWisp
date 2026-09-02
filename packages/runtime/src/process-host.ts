@@ -12,8 +12,10 @@ import {
   type RuntimeRpcRequest,
   type RuntimeRpcResponse,
 } from "@aquawisp/contracts";
+import { getBuiltInModel } from "@aquawisp/models-catalog";
 
 import { CatalogModelPort } from "./catalog-model-port.js";
+import { PersistentConversationContext } from "./conversation-context.js";
 import { SqliteEventStore } from "./event-store.js";
 import type { ModelPort } from "./ports.js";
 import {
@@ -25,6 +27,7 @@ import {
 } from "./production-ports.js";
 import { RunEngine } from "./run-engine.js";
 import { runtimeHostConfig } from "./runtime-host-config.js";
+import type { RuntimeContextConfig } from "./runtime-host-config.js";
 
 export interface RuntimeStdioHostOptions {
   readonly input: Readable;
@@ -51,15 +54,23 @@ export interface RuntimeRunServiceOptions {
   readonly workingDirectory: string;
   readonly onEvent: (event: RuntimeRpcEvent) => void;
   readonly createModel?: (params: RuntimeRunStartRequest["params"]) => ModelPort;
+  readonly contextConfig?: RuntimeContextConfig;
+  readonly promptBundlePath?: string;
 }
 
 export class RuntimeRunService {
   readonly #store: SqliteEventStore;
+  readonly #workingDirectory: string;
   readonly #onEvent: RuntimeRunServiceOptions["onEvent"];
   readonly #createModel: NonNullable<RuntimeRunServiceOptions["createModel"]>;
+  readonly #contextConfig: RuntimeContextConfig;
+  readonly #promptBundlePath: string | undefined;
   #activeRun: ActiveRuntimeRun | undefined;
 
   constructor(options: RuntimeRunServiceOptions) {
+    this.#workingDirectory = options.workingDirectory;
+    this.#contextConfig = options.contextConfig ?? runtimeHostConfig.context;
+    this.#promptBundlePath = options.promptBundlePath;
     this.#onEvent = options.onEvent;
     this.#createModel =
       options.createModel ??
@@ -70,6 +81,7 @@ export class RuntimeRunService {
           protocol: params.protocol,
           reasoningLevel: params.reasoningLevel,
           apiKey: params.apiKey,
+          maximumRecoveryAttempts: runtimeHostConfig.streamRecovery.maximumAttempts,
         }));
     this.#store = new SqliteEventStore({
       databasePath: join(options.workingDirectory, runtimeHostConfig.databaseFileName),
@@ -121,6 +133,17 @@ export class RuntimeRunService {
       const engine = new RunEngine({
         store: this.#store,
         model: this.#createModel(request.params),
+        context: new PersistentConversationContext({
+          store: this.#store,
+          workingDirectory: this.#workingDirectory,
+          model: getBuiltInModel(request.params.modelId),
+          protocol: request.params.protocol,
+          reasoningLevel: request.params.reasoningLevel,
+          config: this.#contextConfig,
+          ...(this.#promptBundlePath === undefined
+            ? {}
+            : { promptBundlePath: this.#promptBundlePath }),
+        }),
         policy: new RejectUnexpectedActionPolicy(),
         executor: new RejectUnexpectedActionExecutor(),
         verifier: new BasicOutputVerifier(),

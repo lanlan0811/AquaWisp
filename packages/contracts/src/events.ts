@@ -29,6 +29,15 @@ export const runEventSchema = z.discriminatedUnion("type", [
     z.object({ stage: runStageSchema, cycle: z.number().int().positive() }).strict(),
   ),
   eventSchema("model.delta", z.object({ delta: z.string().min(1) }).strict()),
+  eventSchema(
+    "model.stream.recovery",
+    z
+      .object({
+        recoveryAttempt: z.number().int().positive(),
+        priorEventCount: z.number().int().nonnegative(),
+      })
+      .strict(),
+  ),
   eventSchema("model.decision", z.object({ decision: modelDecisionSchema }).strict()),
   eventSchema("action.planned", z.object({ action: actionRecordSchema }).strict()),
   eventSchema(

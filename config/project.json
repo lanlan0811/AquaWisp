@@ -21,6 +21,7 @@
     "outputFile": "packages/runtime/resources/prompts/bundle.json",
     "sources": [
       "system-core.md",
+      "model-recovery.md",
       "tools-guide.md",
       "skills-guide.md",
       "safety.md",

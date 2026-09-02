@@ -69,6 +69,7 @@ describe("M5 runtime RPC", () => {
         return new DeterministicModel([
           [
             { kind: "text_delta", delta: "流式" },
+            { kind: "stream_recovery", recoveryAttempt: 1, priorEventCount: 1 },
             { kind: "text_delta", delta: "回答" },
             { kind: "decision", decision: { kind: "final", content: "流式回答" } },
           ],
@@ -96,14 +97,20 @@ describe("M5 runtime RPC", () => {
         result: { status: "completed", finalOutput: "流式回答" },
       });
       expect(events.map(({ type }) => type)).toEqual(
-        expect.arrayContaining(["run.created", "model.delta", "run.completed"]),
+        expect.arrayContaining([
+          "run.created",
+          "model.delta",
+          "model.stream.recovery",
+          "run.completed",
+        ]),
       );
       expect(JSON.stringify({ response, events })).not.toContain("fixture-secret-never-persist");
     } finally {
       service.close();
     }
-    for (const fileName of await readdir(directory)) {
-      const content = await readFile(join(directory, fileName));
+    for (const entry of await readdir(directory, { recursive: true, withFileTypes: true })) {
+      if (!entry.isFile()) continue;
+      const content = await readFile(join(entry.parentPath, entry.name));
       expect(content.includes(Buffer.from("fixture-secret-never-persist"))).toBe(false);
     }
     await rm(directory, { recursive: true, force: true });

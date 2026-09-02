@@ -67,6 +67,14 @@ export async function* streamWithRecovery(
         interruption: error,
         recoveryAttempt: recoveryAttempt + 1,
       });
+      const recoveryEvent: ModelStreamEvent = {
+        kind: "stream_recovery",
+        recoveryAttempt: recoveryAttempt + 1,
+        priorEventCount: emittedEvents.length,
+        sequence: emittedEvents.length,
+      };
+      emittedEvents.push(recoveryEvent);
+      yield recoveryEvent;
       request = {
         ...continuation,
         ...(options.request.signal === undefined ? {} : { signal: options.request.signal }),

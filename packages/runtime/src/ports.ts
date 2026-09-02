@@ -6,12 +6,31 @@ import type {
   Observation,
   Verification,
 } from "@aquawisp/contracts";
+import type { ContextItem } from "@aquawisp/context";
+import type { RunEvent, RunRecord } from "@aquawisp/contracts";
 
 export interface ReasonContext {
   readonly runId: string;
   readonly cycle: number;
   readonly userInput: string;
   readonly observations: readonly Observation[];
+  readonly contextItems: readonly ContextItem[];
+}
+
+export interface RunContextPreparationRequest {
+  readonly run: RunRecord;
+  readonly traceId: string;
+  readonly nextEventId: () => string;
+  readonly now: () => Date;
+}
+
+export interface PreparedRunContext {
+  readonly items: readonly ContextItem[];
+  readonly emittedEvents: readonly RunEvent[];
+}
+
+export interface RunContextPort {
+  prepare(request: RunContextPreparationRequest): Promise<PreparedRunContext>;
 }
 
 export interface ModelPort {

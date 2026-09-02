@@ -41,6 +41,8 @@ Every turn is modeled as six explicit stages:
 
 Side-effect actions advance through `planned → authorized → dispatched → observed → verified`. A dispatched action without a reliable result becomes `unknown`; recovery reconciles its actual state before any retry.
 
+The production `prepare` stage reconstructs user, assistant, and tool-observation items from the session event timeline, loads the hash-verified prompt bundle, records normalized reasoning state, applies configured token-budget compaction, and saves a content-addressed checkpoint. The model port receives those structured items rather than a flattened untrusted string. Interrupted provider streams use a bounded continuation request, and each recovery attempt becomes a committed `model.stream.recovery` event.
+
 The M1 implementation and event catalog are documented in [docs/runtime-v1.md](docs/runtime-v1.md).
 
 ## Packages and dependency direction

@@ -11,6 +11,6 @@
 
 ## 序号与持久化
 
-恢复后的事件使用全局连续 sequence，而不是每个 HTTP 连接的局部序号。runtime 应先持久化已发出的事件，再依据 continuation 回调重新发起模型调用；因此中断前内容仍可回放，恢复流程也可审计。
+恢复后的事件使用全局连续 sequence，而不是每个 HTTP 连接的局部序号。正式 runtime 会把每次续接记录为 `model.stream.recovery`，其中包含尝试次数和续接前事件数；中断前的 `model.delta` 也已经提交，因此完整流程可回放、可审计。
 
-模型供应商没有统一的 SSE resume 标准。Chat Completions 可由调用方在 continuation 中注入已完成的 assistant 内容和受版本化 prompt 管理的续写指令；Responses 则可使用供应商支持的上游响应引用。具体提示词不得写死在客户端实现中。
+模型供应商没有统一的 SSE resume 标准。当前双协议适配器把已经展示的文本作为末尾 assistant 消息附加到原始结构化上下文，再发起一次配置化、有上限的续接；如果还没有输出文本，则安全重放原请求。续写语义由 `docs/prompts/model-recovery.md` 约束，不在客户端中写死。未来可在供应商明确支持时改用 Responses 上游响应引用，但仍须保留同一恢复事件。
