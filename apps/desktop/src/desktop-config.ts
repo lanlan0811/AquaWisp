@@ -45,6 +45,27 @@ const desktopConfigSchema = z
         maximumFailureMessageCharacters: z.number().int().positive().max(65_536),
       })
       .strict(),
+    executionModes: z
+      .array(
+        z
+          .object({
+            id: z.enum(["plan", "work", "full_access"]),
+            label: z.string().min(1).max(32),
+            description: z.string().min(1).max(256),
+            canBeDefault: z.boolean(),
+            requiresConfirmation: z.boolean(),
+          })
+          .strict(),
+      )
+      .length(3)
+      .refine((modes) => new Set(modes.map(({ id }) => id)).size === modes.length, {
+        message: "Desktop execution mode ids must be unique",
+      })
+      .refine(
+        (modes) =>
+          ["plan", "work", "full_access"].every((id) => modes.some((mode) => mode.id === id)),
+        { message: "Desktop execution modes must define plan, work, and full_access" },
+      ),
     settings: z
       .object({
         fileName: z.string().min(1),
@@ -53,7 +74,7 @@ const desktopConfigSchema = z
         defaultProtocol: z.enum(["chat_completions", "responses"]),
         defaultReasoningLevel: z.string().min(1),
         defaultSecretName: z.string().min(1),
-        defaultMode: z.enum(["plan", "work", "full_access"]),
+        defaultMode: z.enum(["plan", "work"]),
       })
       .strict(),
     ipcChannels: z
@@ -78,7 +99,14 @@ const desktopConfigSchema = z
         return new Set(values).size === values.length;
       }, "Desktop IPC channels must be unique"),
   })
-  .strict();
+  .strict()
+  .refine(
+    (config) =>
+      config.executionModes.some(
+        (mode) => mode.id === config.settings.defaultMode && mode.canBeDefault,
+      ),
+    { message: "Desktop default mode must be marked as defaultable" },
+  );
 
 export type DesktopConfig = z.infer<typeof desktopConfigSchema>;
 export const desktopConfig: DesktopConfig = desktopConfigSchema.parse(source);

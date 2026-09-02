@@ -44,3 +44,4 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Runtime-owned approval waits with exact-ID resolution, persisted allow/deny events, cancellation, exact session grants, and a design-system confirmation dialog.
 - Production model-to-tool execution for Chat Completions and Responses, with catalog-derived declarations, fragmented-call assembly, mode-aware policy, bounded observations, cancellation, and verified filesystem/search/terminal/web/knowledge adapters.
 - Ledger-linked desktop source citations with validated knowledge metadata, query highlighting, a right-side source panel, and plaintext read-only chunk details.
+- Configuration-driven in-conversation mode controls with Run-time locking, explicit Full Access confirmation, per-session reset, and contract-enforced non-persistence.

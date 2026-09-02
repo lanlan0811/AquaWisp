@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -63,5 +63,24 @@ describe("M5 desktop settings store", () => {
     await expect(store.set({ ...defaults, reasoningLevel: "unsupported" })).rejects.toThrow(
       "does not support reasoning level",
     );
+    await expect(store.set({ ...defaults, mode: "full_access" })).rejects.toThrow();
+  });
+
+  it("safely downgrades the formerly persisted full-access mode", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aquawisp-settings-legacy-mode-"));
+    directories.push(directory);
+    const filePath = join(directory, "settings.json");
+    const defaults = {
+      providerId: "bigmodel",
+      modelId: "glm-5.3",
+      protocol: "chat_completions" as const,
+      reasoningLevel: "max",
+      secretName: "provider-bigmodel-api-key",
+      mode: "work" as const,
+    };
+    await writeFile(filePath, JSON.stringify({ ...defaults, mode: "full_access" }), "utf8");
+
+    const store = new DesktopSettingsStore({ filePath, defaults });
+    await expect(store.get()).resolves.toEqual(defaults);
   });
 });

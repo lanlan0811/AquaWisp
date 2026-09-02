@@ -25,7 +25,8 @@ export class DesktopSettingsStore {
 
   async get(): Promise<DesktopSettings> {
     try {
-      return validateSettings(JSON.parse(await readFile(this.#filePath, "utf8")) as unknown);
+      const stored = JSON.parse(await readFile(this.#filePath, "utf8")) as unknown;
+      return validateSettings(migrateLegacySettings(stored, this.#defaults.mode));
     } catch (error) {
       if (isMissingFileError(error)) return this.#defaults;
       throw error;
@@ -57,6 +58,19 @@ export class DesktopSettingsStore {
     );
     return result;
   }
+}
+
+function migrateLegacySettings(input: unknown, safeDefaultMode: DesktopSettings["mode"]): unknown {
+  if (
+    typeof input !== "object" ||
+    input === null ||
+    Array.isArray(input) ||
+    !("mode" in input) ||
+    input.mode !== "full_access"
+  ) {
+    return input;
+  }
+  return { ...input, mode: safeDefaultMode };
 }
 
 function validateSettings(input: unknown): DesktopSettings {

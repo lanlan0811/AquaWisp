@@ -7,6 +7,7 @@ import {
   desktopStyles,
   sourceStyles,
 } from "@aquawisp/desktop";
+import { desktopConversationStartRequestSchema } from "@aquawisp/contracts";
 import { describe, expect, it } from "vitest";
 
 describe("M5 design-system desktop renderer", () => {
@@ -23,6 +24,22 @@ describe("M5 design-system desktop renderer", () => {
     reasoningLevel: "max",
     secretName: "provider-bigmodel-api-key",
   };
+
+  it("requires an explicit validated session mode for every Run", () => {
+    expect(
+      desktopConversationStartRequestSchema.parse({
+        sessionId: "session-mode",
+        userInput: "检索知识库",
+        mode: "full_access",
+      }),
+    ).toMatchObject({ mode: "full_access" });
+    expect(() =>
+      desktopConversationStartRequestSchema.parse({
+        sessionId: "session-mode",
+        userInput: "检索知识库",
+      }),
+    ).toThrow();
+  });
 
   it("renders Chinese mode copy, a running stop control, and SVG-only icons", () => {
     const markup = createDesktopMarkup(state);
@@ -41,6 +58,13 @@ describe("M5 design-system desktop renderer", () => {
     expect(markup).toContain('data-right-tab="sources"');
     expect(markup).toContain("data-source-list");
     expect(markup).toContain("data-source-detail-content");
+    expect(markup).toContain('data-session-mode="plan"');
+    expect(markup).toContain('data-session-mode="work"');
+    expect(markup).toContain('data-session-mode="full_access"');
+    expect(markup).toContain("data-full-access-dialog");
+    expect(markup).toContain("完全访问仅能在会话中确认后临时启用");
+    const defaultModeSelect = /<select name="mode">(?<options>.*?)<\/select>/u.exec(markup);
+    expect(defaultModeSelect?.groups?.options).not.toContain('value="full_access"');
     expect(markup).toContain("让沧渡检索知识库后，命中内容会显示在这里");
     expect(markup).toContain("本会话内，相同操作、目标和影响范围总是允许");
     expect(markup).toContain('name="reasoningLevel"');
@@ -49,6 +73,9 @@ describe("M5 design-system desktop renderer", () => {
     expect(desktopRendererScript).toContain("api.settings.set");
     expect(desktopRendererScript).toContain("api.secrets.has");
     expect(desktopRendererScript).toContain("api.conversation.start");
+    expect(desktopRendererScript).toContain("{ sessionId, userInput, mode: sessionMode }");
+    expect(desktopRendererScript).toContain("button.disabled = nextRunning");
+    expect(desktopRendererScript).toContain('fullAccessDialog.returnValue === "enable"');
     expect(desktopRendererScript).toContain("api.conversation.cancel");
     expect(desktopRendererScript).toContain("api.conversation.onEvent");
     expect(desktopRendererScript).toContain("api.knowledge.list");

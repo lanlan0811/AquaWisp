@@ -25,6 +25,29 @@
     "maximumFilesPerImport": 32,
     "maximumFailureMessageCharacters": 4096
   },
+  "executionModes": [
+    {
+      "id": "plan",
+      "label": "计划",
+      "description": "只读分析与检索，不写入文件或执行命令",
+      "canBeDefault": true,
+      "requiresConfirmation": false
+    },
+    {
+      "id": "work",
+      "label": "工作",
+      "description": "允许工作区内写入与受控命令，边界动作仍需确认",
+      "canBeDefault": true,
+      "requiresConfirmation": false
+    },
+    {
+      "id": "full_access",
+      "label": "完全访问",
+      "description": "本会话放宽高风险动作限制，仍保留完整审计记录",
+      "canBeDefault": false,
+      "requiresConfirmation": true
+    }
+  ],
   "settings": {
     "fileName": "settings.json",
     "defaultProviderId": "bigmodel",

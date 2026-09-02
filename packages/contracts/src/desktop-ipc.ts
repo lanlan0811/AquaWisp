@@ -23,8 +23,15 @@ export const desktopSecretDeleteResultSchema = z.object({ deleted: z.boolean() }
 
 export const desktopRuntimeStatusResultSchema = z.object({ connected: z.boolean() }).strict();
 
+export const desktopSessionModeSchema = z.enum(["plan", "work", "full_access"]);
+export const desktopDefaultModeSchema = z.enum(["plan", "work"]);
+
 export const desktopConversationStartRequestSchema = z
-  .object({ sessionId: entityIdSchema, userInput: z.string().min(1).max(1_048_576) })
+  .object({
+    sessionId: entityIdSchema,
+    userInput: z.string().min(1).max(1_048_576),
+    mode: desktopSessionModeSchema,
+  })
   .strict();
 export const desktopConversationCancelRequestSchema = z.object({ runId: entityIdSchema }).strict();
 export const desktopConversationStartResultSchema = runRecordSchema;
@@ -59,11 +66,12 @@ export const desktopSettingsSchema = z
     protocol: z.enum(["chat_completions", "responses"]),
     reasoningLevel: entityIdSchema,
     secretName: entityIdSchema,
-    mode: z.enum(["plan", "work", "full_access"]),
+    mode: desktopDefaultModeSchema,
   })
   .strict();
 
 export type DesktopSecretSetRequest = z.infer<typeof desktopSecretSetRequestSchema>;
 export type DesktopSecretNameRequest = z.infer<typeof desktopSecretNameRequestSchema>;
 export type DesktopSettings = z.infer<typeof desktopSettingsSchema>;
+export type DesktopSessionMode = z.infer<typeof desktopSessionModeSchema>;
 export type DesktopKnowledgeAddFilesResult = z.infer<typeof desktopKnowledgeAddFilesResultSchema>;
