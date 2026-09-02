@@ -2,6 +2,7 @@ import {
   browserCommandCatalog,
   browserCommandSchema,
   browserRequestSchema,
+  isReadOnlyBrowserCommand,
 } from "@aquawisp/browser";
 import { describe, expect, it } from "vitest";
 
@@ -71,5 +72,22 @@ describe("M6 browser command catalog", () => {
         command: request.command,
       }),
     ).toThrow();
+  });
+
+  it("drives the plan-mode command boundary from the browser catalog", () => {
+    expect(isReadOnlyBrowserCommand(browserCommandSchema.parse({ kind: "snapshot" }))).toBe(true);
+    expect(
+      isReadOnlyBrowserCommand(
+        browserCommandSchema.parse({ kind: "navigate", url: "https://example.test" }),
+      ),
+    ).toBe(true);
+    expect(
+      isReadOnlyBrowserCommand(browserCommandSchema.parse({ kind: "click", ref: "ref-1" })),
+    ).toBe(false);
+    expect(
+      isReadOnlyBrowserCommand(
+        browserCommandSchema.parse({ kind: "evaluate", expression: "document.title" }),
+      ),
+    ).toBe(false);
   });
 });

@@ -29,4 +29,24 @@ describe("M7 built-in skill loader", () => {
     expect((await loader.load(path)).instructions).toContain("按需加载");
     await expect(loader.load(join(root, "..", "outside.md"))).rejects.toThrow("outside");
   });
+
+  it("ships exactly the five planned built-in skills with one AquaWisp browser skill", async () => {
+    const loader = await BuiltInSkillLoader.create([join(process.cwd(), "skills")]);
+    const skills = await loader.list();
+
+    expect(skills.map(({ name }) => name).sort()).toEqual([
+      "browser-use",
+      "docx",
+      "pdf",
+      "pptx",
+      "xlsx",
+    ]);
+    const browser = skills.find(({ name }) => name === "browser-use");
+    expect(browser?.metadata).toMatchObject({
+      author: "AquaWisp Contributors",
+      version: "0.1.0",
+      license: "MIT",
+    });
+    expect(browser?.path).toBe(join(process.cwd(), "skills", "browser-use", "SKILL.md"));
+  });
 });

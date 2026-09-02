@@ -7,7 +7,7 @@ import {
   type AuthorizationDecision,
   type Observation,
 } from "@aquawisp/contracts";
-import { browserCommandSchema } from "@aquawisp/browser";
+import { browserCommandSchema, isReadOnlyBrowserCommand } from "@aquawisp/browser";
 import {
   getToolDefinition,
   isBuiltInToolId,
@@ -167,10 +167,10 @@ export class BuiltInToolRuntime implements ActionExecutorPort {
           signal,
         });
         break;
+      case "browser.observe":
       case "browser.command": {
         if (this.#browser === undefined) throw new Error("Browser host is not available");
-        const input = parseToolInput("browser.command", action.input);
-        browserCommandSchema.parse(input.command);
+        const { input } = parseBrowserInput(action);
         output = await this.#browser.execute(action.id, input, signal);
         break;
       }
@@ -232,9 +232,9 @@ export class BuiltInToolRuntime implements ActionExecutorPort {
           scope: "workspace",
           description: parseToolInput("web.fetch", action.input).url,
         };
+      case "browser.observe":
       case "browser.command": {
-        const input = parseToolInput("browser.command", action.input);
-        const command = browserCommandSchema.parse(input.command);
+        const { input, command } = parseBrowserInput(action);
         if (command.kind === "screenshot" || command.kind === "recordingStart") {
           return await this.#pathTarget(command.path);
         }
@@ -287,9 +287,9 @@ function validateInput(action: ActionRecord): void {
     case "web.fetch":
       parseToolInput("web.fetch", action.input);
       break;
+    case "browser.observe":
     case "browser.command": {
-      const input = parseToolInput("browser.command", action.input);
-      browserCommandSchema.parse(input.command);
+      parseBrowserInput(action);
       break;
     }
     case "kb.add":
@@ -305,6 +305,21 @@ function validateInput(action: ActionRecord): void {
       parseToolInput("kb.status", action.input);
       break;
   }
+}
+
+function parseBrowserInput(action: ActionRecord) {
+  if (action.toolName !== "browser.observe" && action.toolName !== "browser.command") {
+    throw new Error("Action is not a browser tool call");
+  }
+  const input =
+    action.toolName === "browser.observe"
+      ? parseToolInput("browser.observe", action.input)
+      : parseToolInput("browser.command", action.input);
+  const command = browserCommandSchema.parse(input.command);
+  if (action.toolName === "browser.observe" && !isReadOnlyBrowserCommand(command)) {
+    throw new Error(`Browser command is not read-only: ${command.kind}`);
+  }
+  return { input, command };
 }
 
 function parsePathInput(action: ActionRecord): string {

@@ -81,6 +81,29 @@ describe("M3 tool policy evaluator", () => {
     expect(planBoundaryResult.approvalRequest).toBeUndefined();
   });
 
+  it("allows registered browser observation but denies browser side effects in plan mode", () => {
+    const plan = evaluator("plan");
+    const observed = plan.authorize(
+      action({
+        toolName: "browser.observe",
+        input: { command: { kind: "snapshot" } },
+        sideEffect: false,
+      }),
+      { scope: "workspace", description: "当前浏览器标签页" },
+    );
+    const interacted = plan.authorize(
+      action({
+        toolName: "browser.command",
+        input: { command: { kind: "click", ref: "ref-1" } },
+        sideEffect: true,
+      }),
+      { scope: "workspace", description: "当前浏览器标签页" },
+    );
+
+    expect(observed.decision).toMatchObject({ outcome: "allowed" });
+    expect(interacted.decision).toMatchObject({ outcome: "denied", reasonCode: "mode_denied" });
+  });
+
   it("requires an auditable approval for a boundary crossing", () => {
     const result = evaluator("work").authorize(action(), {
       scope: "external",

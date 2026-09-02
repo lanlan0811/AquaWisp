@@ -6,6 +6,7 @@ const browserCommandCatalogSchema = z
   .object({
     schemaVersion: z.literal(1),
     commands: z.array(z.string().min(1)),
+    readOnlyCommands: z.array(z.string().min(1)),
     limits: z
       .object({
         requestIdCharacters: z.number().int().positive(),
@@ -25,7 +26,15 @@ const browserCommandCatalogSchema = z
   .strict()
   .refine(({ commands }) => new Set(commands).size === commands.length, {
     message: "Browser command names must be unique",
-  });
+  })
+  .refine(
+    ({ commands, readOnlyCommands }) =>
+      new Set(readOnlyCommands).size === readOnlyCommands.length &&
+      readOnlyCommands.every((command) => commands.includes(command)),
+    {
+      message: "Read-only browser commands must be unique catalog commands",
+    },
+  );
 
 export const browserCommandCatalog = browserCommandCatalogSchema.parse(source);
 const { limits } = browserCommandCatalog;
@@ -116,6 +125,12 @@ export const browserCancelRequestSchema = z
   .strict();
 export type BrowserCommand = z.infer<typeof browserCommandSchema>;
 export type BrowserRequest = z.infer<typeof browserRequestSchema>;
+
+const readOnlyBrowserCommands = new Set(browserCommandCatalog.readOnlyCommands);
+
+export function isReadOnlyBrowserCommand(command: BrowserCommand): boolean {
+  return readOnlyBrowserCommands.has(command.kind);
+}
 
 const schemaCommandNames = commandSchemas.map((schema) => schema.shape.kind.value);
 if (

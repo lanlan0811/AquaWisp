@@ -148,12 +148,33 @@
       }
     },
     {
+      "id": "browser.observe",
+      "modelName": "browser_observe",
+      "revision": "1",
+      "riskLevel": "low",
+      "sideEffect": false,
+      "description": "在当前桌面浏览器中导航、等待或读取页面状态。只接受只读命令，可在 plan 模式使用；先 snapshot 获取页面引用。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tabId": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "command": {
+            "type": "object",
+            "properties": { "kind": { "type": "string", "minLength": 1, "maxLength": 64 } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["command"],
+        "additionalProperties": false
+      }
+    },
+    {
       "id": "browser.command",
       "modelName": "browser_command",
       "revision": "1",
       "riskLevel": "medium",
       "sideEffect": true,
-      "description": "通过桌面浏览器宿主执行一个严格校验的浏览器命令。先 snapshot 获取当前页面引用，再用 ref 交互；导航会使旧 ref 失效。",
+      "description": "在桌面浏览器中执行交互、脚本、标签管理、截图、下载、对话框或录制命令。该工具有副作用并进入权限与动作账本。",
       "inputSchema": {
         "type": "object",
         "properties": {

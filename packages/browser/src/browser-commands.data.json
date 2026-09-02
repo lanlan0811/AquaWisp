@@ -29,6 +29,17 @@
     "recordingStart",
     "recordingStop"
   ],
+  "readOnlyCommands": [
+    "navigate",
+    "back",
+    "forward",
+    "reload",
+    "waitFor",
+    "waitForURL",
+    "snapshot",
+    "getState",
+    "listTabs"
+  ],
   "limits": {
     "requestIdCharacters": 128,
     "tabIdCharacters": 128,
