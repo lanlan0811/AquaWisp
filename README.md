@@ -82,6 +82,7 @@ npm run smoke
 API key 的系统加密与 renderer 权限边界见 [密钥存储与 IPC 边界](docs/secrets.md)。
 内嵌 webview 与 CDP 的安全边界见 [可视浏览器宿主](docs/browser-host.md)。
 同文件持久向量检索实现见 [SQLite 持久向量索引](docs/sqlite-vector.md)。
+本地文件格式、Office/PDF 抽取与资源边界见 [本地文件入库抽取](docs/ingestion.md)。
 
 ## 安全与隐私
 

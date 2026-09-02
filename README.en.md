@@ -54,6 +54,7 @@ See [stdio MCP client](docs/mcp.en.md) for the local-server registry and securit
 See [Secret storage and IPC boundary](docs/secrets.en.md) for operating-system encryption and renderer restrictions.
 See [Visible browser host](docs/browser-host.en.md) for the embedded webview and CDP security boundary.
 See [Persistent SQLite vector index](docs/sqlite-vector.en.md) for the same-file `sqlite-vec` backend.
+See [Local file ingestion](docs/ingestion.en.md) for Office/PDF extraction and resource boundaries.
 
 ## Contributing and security
 

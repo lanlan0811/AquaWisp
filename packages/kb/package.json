@@ -15,7 +15,9 @@
     "dist"
   ],
   "dependencies": {
+    "fflate": "0.8.3",
     "sqlite-vec": "0.1.9",
+    "unpdf": "1.8.1",
     "zod": "4.5.4"
   }
 }

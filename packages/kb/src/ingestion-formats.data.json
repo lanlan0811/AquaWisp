@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "limits": {
+    "maximumInputBytes": 52428800,
+    "maximumArchiveEntries": 10000,
+    "maximumArchiveEntryBytes": 16777216,
+    "maximumArchiveTextBytes": 67108864,
+    "maximumOutputCharacters": 20000000
+  },
+  "formats": [
+    { "id": "markdown", "extensions": [".md", ".markdown"], "mimeTypes": ["text/markdown"] },
+    { "id": "text", "extensions": [".txt"], "mimeTypes": ["text/plain"] },
+    { "id": "html", "extensions": [".html", ".htm"], "mimeTypes": ["text/html"] },
+    {
+      "id": "docx",
+      "extensions": [".docx"],
+      "mimeTypes": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+    },
+    { "id": "pdf", "extensions": [".pdf"], "mimeTypes": ["application/pdf"] },
+    {
+      "id": "xlsx",
+      "extensions": [".xlsx"],
+      "mimeTypes": ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+    },
+    {
+      "id": "pptx",
+      "extensions": [".pptx"],
+      "mimeTypes": ["application/vnd.openxmlformats-officedocument.presentationml.presentation"]
+    }
+  ]
+}

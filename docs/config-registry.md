@@ -15,6 +15,7 @@ AquaWisp avoids scattered behavior constants. Values that vary by package, platf
 | `packages/tools/src/mcp-registry.data.json`       | MCP client                 | Stdio server declarations, environment references, exact tool allowlists and size limits  | zod schema plus real stdio integration tests                    |
 | `packages/browser/src/browser-policy.data.json`   | browser host               | Initial page, URL protocol allowlist and pinned CDP protocol version                      | zod schema plus webview/tab lifecycle regression tests          |
 | `packages/browser/src/browser-commands.data.json` | browser runtime            | Complete M6 command names and per-field request limits                                    | catalog/schema parity plus invalid-shape regression tests       |
+| `packages/kb/src/ingestion-formats.data.json`     | knowledge-base ingestion   | File extensions, MIME types, extraction formats and decompression/output resource limits  | zod uniqueness checks plus real-format and damaged-input tests  |
 | `apps/desktop/src/desktop-config.data.json`       | Electron main/preload      | Window bounds, runtime limits, environment allowlist, secret limits and IPC channels      | zod schema, preload drift check and packaged-process tests      |
 | `vitest.config.ts`                                | repository tooling         | Cross-platform test scheduling and timeout budget                                         | full verification on Windows and macOS CI                       |
 
@@ -26,7 +27,7 @@ AquaWisp avoids scattered behavior constants. Values that vary by package, platf
 | --------- | --------------------------------------------------------------------------------------------------------- |
 | M2        | Provider/model capabilities, protocols, reasoning levels and request patches in `packages/models-catalog` |
 | M3        | Tool declarations, workspace policies, risk levels and cross-platform terminal adapters                   |
-| M4        | Ingestion extractors, chunking, embedding providers and retrieval weights                                 |
+| M4        | Embedding providers and hybrid retrieval weights                                                          |
 | M5        | Themes, localized copy, SVG icon index and desktop navigation                                             |
 | M6        | Browser commands, protocol allowlist, download and recording policy                                       |
 | M7        | Built-in skill manifest and environment dependency adapters                                               |
