@@ -38,16 +38,36 @@ const desktopConfigSchema = z
         maxCiphertextBytes: z.number().int().positive().max(10_485_760),
       })
       .strict(),
+    settings: z
+      .object({
+        fileName: z.string().min(1),
+        defaultProviderId: z.string().min(1),
+        defaultModelId: z.string().min(1),
+        defaultProtocol: z.enum(["chat_completions", "responses"]),
+        defaultReasoningLevel: z.string().min(1),
+        defaultSecretName: z.string().min(1),
+        defaultMode: z.enum(["plan", "work", "full_access"]),
+      })
+      .strict(),
     ipcChannels: z
       .object({
         runtimePing: z.string().min(1),
         secretSet: z.string().min(1),
         secretHas: z.string().min(1),
         secretDelete: z.string().min(1),
+        settingsGet: z.string().min(1),
+        settingsSet: z.string().min(1),
       })
       .strict()
-      .refine(({ runtimePing, secretSet, secretHas, secretDelete }) => {
-        const channels = [runtimePing, secretSet, secretHas, secretDelete];
+      .refine(({ runtimePing, secretSet, secretHas, secretDelete, settingsGet, settingsSet }) => {
+        const channels = [
+          runtimePing,
+          secretSet,
+          secretHas,
+          secretDelete,
+          settingsGet,
+          settingsSet,
+        ];
         return new Set(channels).size === channels.length;
       }, "Desktop IPC channels must be unique"),
   })

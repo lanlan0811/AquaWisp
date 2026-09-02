@@ -16,7 +16,8 @@ describe("M5 sandbox preload", () => {
       expect(preload).toContain(channel);
     }
     expect(preload).toContain("contextBridge.exposeInMainWorld");
+    expect(preload).toContain("settings: Object.freeze");
     expect(preload).not.toContain("decrypt");
-    expect(preload).not.toContain("get:");
+    expect(preload).not.toContain("secrets: Object.freeze({\n      get:");
   });
 });

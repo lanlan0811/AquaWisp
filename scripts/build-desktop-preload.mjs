@@ -12,7 +12,9 @@ if (
   typeof channels?.runtimePing !== "string" ||
   typeof channels.secretSet !== "string" ||
   typeof channels.secretHas !== "string" ||
-  typeof channels.secretDelete !== "string"
+  typeof channels.secretDelete !== "string" ||
+  typeof channels.settingsGet !== "string" ||
+  typeof channels.settingsSet !== "string"
 ) {
   throw new Error("Desktop IPC channel registry is invalid");
 }
@@ -24,11 +26,17 @@ const channels = Object.freeze({
   secretSet: ${JSON.stringify(channels.secretSet)},
   secretHas: ${JSON.stringify(channels.secretHas)},
   secretDelete: ${JSON.stringify(channels.secretDelete)},
+  settingsGet: ${JSON.stringify(channels.settingsGet)},
+  settingsSet: ${JSON.stringify(channels.settingsSet)},
 });
 contextBridge.exposeInMainWorld(
   "aquawisp",
   Object.freeze({
     runtimePing: () => ipcRenderer.invoke(channels.runtimePing),
+    settings: Object.freeze({
+      get: () => ipcRenderer.invoke(channels.settingsGet),
+      set: (settings) => ipcRenderer.invoke(channels.settingsSet, settings),
+    }),
     secrets: Object.freeze({
       set: (name, value) => ipcRenderer.invoke(channels.secretSet, { name, value }),
       has: (name) => ipcRenderer.invoke(channels.secretHas, { name }),

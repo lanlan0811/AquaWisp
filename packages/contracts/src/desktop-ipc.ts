@@ -19,5 +19,17 @@ export const desktopSecretDeleteResultSchema = z.object({ deleted: z.boolean() }
 
 export const desktopRuntimeStatusResultSchema = z.object({ connected: z.boolean() }).strict();
 
+export const desktopSettingsSchema = z
+  .object({
+    providerId: entityIdSchema,
+    modelId: entityIdSchema,
+    protocol: z.enum(["chat_completions", "responses"]),
+    reasoningLevel: entityIdSchema,
+    secretName: entityIdSchema,
+    mode: z.enum(["plan", "work", "full_access"]),
+  })
+  .strict();
+
 export type DesktopSecretSetRequest = z.infer<typeof desktopSecretSetRequestSchema>;
 export type DesktopSecretNameRequest = z.infer<typeof desktopSecretNameRequestSchema>;
+export type DesktopSettings = z.infer<typeof desktopSettingsSchema>;

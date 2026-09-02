@@ -36,3 +36,4 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - OpenAI-compatible remote or loopback embedding transport with encrypted-key injection boundaries and bounded responses.
 - Incremental FTS/vector indexing plus full-text, semantic, and RRF hybrid search with source attribution and highlights.
 - Unified file-ingestion pipeline and a versioned Chinese Recall@3 baseline covering the complete M4 format-to-source retrieval path.
+- Atomic non-secret desktop settings, catalog-validated model/reasoning choices, nonce-restricted interactive settings UI, and write-only encrypted API-key handling.

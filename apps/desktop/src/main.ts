@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,8 +10,11 @@ import {
   desktopSecretNameRequestSchema,
   desktopSecretPresenceResultSchema,
   desktopSecretSetRequestSchema,
+  desktopSettingsSchema,
+  type DesktopSettings,
 } from "@aquawisp/contracts";
 import { browserPolicy, hardenWebviewPreferences, type BrowserTabPort } from "@aquawisp/browser";
+import { getBuiltInModel } from "@aquawisp/models-catalog";
 import {
   app,
   BrowserWindow,
@@ -22,15 +26,16 @@ import {
 
 import { createRuntimeEnvironment, desktopConfig } from "./desktop-config.js";
 import { browserTabs, registerBrowserTab, validateWebviewSource } from "./browser-host.js";
-import { createDesktopMarkup, desktopStyles } from "./renderer/ui.js";
+import { createDesktopDocument } from "./renderer/ui.js";
 import { RuntimeProcessClient } from "./runtime-client.js";
 import { SecretVault } from "./secret-vault.js";
+import { DesktopSettingsStore } from "./settings-store.js";
 
 let runtime: RuntimeProcessClient | undefined;
 let shutdownStarted = false;
 let authorizedWebContentsId: number | undefined;
 
-function createWindow(runtimeConnected: boolean): BrowserWindowType {
+function createWindow(runtimeConnected: boolean, settings: DesktopSettings): BrowserWindowType {
   const window = new BrowserWindow({
     ...desktopConfig.window,
     webPreferences: {
@@ -79,12 +84,39 @@ function createWindow(runtimeConnected: boolean): BrowserWindowType {
   window.webContents.on("will-navigate", (event) => {
     event.preventDefault();
   });
-  const document = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>沧渡 AquaWisp</title><style>${desktopStyles}</style></head><body>${createDesktopMarkup({ mode: "work", workspaceName: "本地工作区", modelName: "GLM-5.3", running: false, runtimeStatus: runtimeConnected ? "connected" : "disconnected", browserVisible: true })}</body></html>`;
+  const scriptNonce = randomBytes(18).toString("base64");
+  const document = createDesktopDocument(
+    {
+      mode: settings.mode,
+      workspaceName: "本地工作区",
+      modelName: getBuiltInModel(settings.modelId).name,
+      running: false,
+      runtimeStatus: runtimeConnected ? "connected" : "disconnected",
+      browserVisible: true,
+      providerId: settings.providerId,
+      modelId: settings.modelId,
+      protocol: settings.protocol,
+      reasoningLevel: settings.reasoningLevel,
+      secretName: settings.secretName,
+    },
+    scriptNonce,
+  );
   void window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(document)}`);
   return window;
 }
 
 void app.whenReady().then(() => {
+  const settingsStore = new DesktopSettingsStore({
+    filePath: join(app.getPath("userData"), desktopConfig.settings.fileName),
+    defaults: desktopSettingsSchema.parse({
+      providerId: desktopConfig.settings.defaultProviderId,
+      modelId: desktopConfig.settings.defaultModelId,
+      protocol: desktopConfig.settings.defaultProtocol,
+      reasoningLevel: desktopConfig.settings.defaultReasoningLevel,
+      secretName: desktopConfig.settings.defaultSecretName,
+      mode: desktopConfig.settings.defaultMode,
+    }),
+  });
   registerDesktopIpc(
     new SecretVault({
       filePath: join(app.getPath("userData"), desktopConfig.secrets.fileName),
@@ -92,11 +124,14 @@ void app.whenReady().then(() => {
       maxCiphertextBytes: desktopConfig.secrets.maxCiphertextBytes,
       cipher: safeStorage,
     }),
+    settingsStore,
   );
-  void startRuntime().then(createWindow, () => createWindow(false));
+  void Promise.all([startRuntime().catch(() => false), settingsStore.get()]).then(
+    ([connected, settings]) => createWindow(connected, settings),
+  );
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow(runtime !== undefined);
+      void settingsStore.get().then((settings) => createWindow(runtime !== undefined, settings));
     }
   });
 });
@@ -144,7 +179,7 @@ async function startRuntime(): Promise<boolean> {
   }
 }
 
-function registerDesktopIpc(secretVault: SecretVault): void {
+function registerDesktopIpc(secretVault: SecretVault, settingsStore: DesktopSettingsStore): void {
   ipcMain.handle(desktopConfig.ipcChannels.runtimePing, async (event) => {
     assertAuthorizedRenderer(event);
     if (runtime === undefined) {
@@ -178,6 +213,14 @@ function registerDesktopIpc(secretVault: SecretVault): void {
     return desktopSecretDeleteResultSchema.parse({
       deleted: await secretVault.delete(request.name),
     });
+  });
+  ipcMain.handle(desktopConfig.ipcChannels.settingsGet, async (event) => {
+    assertAuthorizedRenderer(event);
+    return desktopSettingsSchema.parse(await settingsStore.get());
+  });
+  ipcMain.handle(desktopConfig.ipcChannels.settingsSet, async (event, input: unknown) => {
+    assertAuthorizedRenderer(event);
+    return desktopSettingsSchema.parse(await settingsStore.set(input));
   });
 }
 

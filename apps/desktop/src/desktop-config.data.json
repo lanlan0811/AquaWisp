@@ -20,10 +20,21 @@
     "maxSecretCharacters": 16384,
     "maxCiphertextBytes": 65536
   },
+  "settings": {
+    "fileName": "settings.json",
+    "defaultProviderId": "bigmodel",
+    "defaultModelId": "glm-5.3",
+    "defaultProtocol": "chat_completions",
+    "defaultReasoningLevel": "max",
+    "defaultSecretName": "provider-bigmodel-api-key",
+    "defaultMode": "work"
+  },
   "ipcChannels": {
     "runtimePing": "aquawisp:runtime:ping",
     "secretSet": "aquawisp:secret:set",
     "secretHas": "aquawisp:secret:has",
-    "secretDelete": "aquawisp:secret:delete"
+    "secretDelete": "aquawisp:secret:delete",
+    "settingsGet": "aquawisp:settings:get",
+    "settingsSet": "aquawisp:settings:set"
   }
 }

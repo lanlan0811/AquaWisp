@@ -2,3 +2,4 @@ export * from "./desktop-config.js";
 export * from "./renderer/ui.js";
 export * from "./runtime-client.js";
 export * from "./secret-vault.js";
+export * from "./settings-store.js";
