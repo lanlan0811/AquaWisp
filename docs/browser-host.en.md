@@ -9,10 +9,11 @@ The current security baseline:
 - both the primary window and guests deny `window.open`, while every guest navigation is protocol-checked again;
 - each guest is registered once and attaches the configured CDP 1.3 session;
 - guest destruction removes its tab, and application shutdown detaches surviving debugger sessions; and
+- every command request carries the active backend generation; the bridge validates its strict schema, rejects stale generations and conflicting request-ID replays, and enforces observable timeout and cancellation; and
 - the initial URL, protocols, and CDP version come from `packages/browser/src/browser-policy.data.json`.
 
 The right browser panel follows the AquaWisp design system with a 280px width, Chinese-first label, and SVG icon. The packaged-app check requires the primary renderer, webview renderer, and independent runtime to remain alive together.
 
 ## Current boundary
 
-This change establishes the visible webview and safe tab/CDP lifecycle. The runtime side already has a request-deduplicating, cancellable command bridge. Remaining M6 work must connect the full command surface, ref snapshots, screenshots, downloads, dialogs, recording, and one-click knowledge ingestion to a main-process executor. Web content and CDP observations remain untrusted data.
+The visible webview and safe tab/CDP lifecycle are in place, together with a strictly validated command bridge that provides request-ID idempotency, timeout, cancellation, and backend-generation isolation. Remaining M6 work must connect the full command surface, ref snapshots, screenshots, downloads, dialogs, recording, and one-click knowledge ingestion to a main-process executor. Web content and CDP observations remain untrusted data.

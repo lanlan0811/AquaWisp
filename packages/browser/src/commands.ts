@@ -97,6 +97,7 @@ export const browserCommandSchema = z.discriminatedUnion("kind", commandSchemas)
 export const browserRequestSchema = z
   .object({
     requestId: z.string().min(1).max(limits.requestIdCharacters),
+    backendGeneration: z.number().int().positive(),
     tabId: tabIdSchema,
     command: browserCommandSchema,
   })

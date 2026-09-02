@@ -1,4 +1,8 @@
-import { browserCommandCatalog, browserCommandSchema } from "@aquawisp/browser";
+import {
+  browserCommandCatalog,
+  browserCommandSchema,
+  browserRequestSchema,
+} from "@aquawisp/browser";
 import { describe, expect, it } from "vitest";
 
 const examples: readonly unknown[] = [
@@ -43,5 +47,23 @@ describe("M6 browser command catalog", () => {
       browserCommandSchema.parse({ kind: "scroll", deltaX: 0, deltaY: 100_001 }),
     ).toThrow();
     expect(() => browserCommandSchema.parse({ kind: "unknown" })).toThrow();
+  });
+
+  it("requires a positive backend generation on every bridged request", () => {
+    const request = {
+      requestId: "request-1",
+      backendGeneration: 2,
+      tabId: "tab-1",
+      command: { kind: "snapshot" },
+    };
+    expect(browserRequestSchema.parse(request)).toEqual(request);
+    expect(() => browserRequestSchema.parse({ ...request, backendGeneration: 0 })).toThrow();
+    expect(() =>
+      browserRequestSchema.parse({
+        requestId: request.requestId,
+        tabId: request.tabId,
+        command: request.command,
+      }),
+    ).toThrow();
   });
 });
