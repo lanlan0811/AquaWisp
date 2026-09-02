@@ -111,6 +111,9 @@ export const browserRequestSchema = z
     command: browserCommandSchema,
   })
   .strict();
+export const browserCancelRequestSchema = z
+  .object({ requestId: z.string().min(1).max(limits.requestIdCharacters) })
+  .strict();
 export type BrowserCommand = z.infer<typeof browserCommandSchema>;
 export type BrowserRequest = z.infer<typeof browserRequestSchema>;
 

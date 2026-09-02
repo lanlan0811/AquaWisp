@@ -73,20 +73,20 @@ class FakeHost implements BrowserAutomationHost {
     return Promise.resolve({ path, bytes: 3 });
   }
 
-  handleDialog(accept: boolean, promptText: string | undefined): Promise<unknown> {
-    return Promise.resolve({ accept, promptText });
+  handleDialog(tabId: string, accept: boolean, promptText: string | undefined): Promise<unknown> {
+    return Promise.resolve({ tabId, accept, promptText });
   }
 
-  downloadPath(): Promise<unknown> {
-    return Promise.resolve({ path: "downloads/file.pdf" });
+  downloadPath(tabId: string): Promise<unknown> {
+    return Promise.resolve({ tabId, path: "downloads/file.pdf" });
   }
 
-  recordingStart(path: string): Promise<unknown> {
-    return Promise.resolve({ path, recording: true });
+  recordingStart(tabId: string, path: string): Promise<unknown> {
+    return Promise.resolve({ tabId, path, recording: true });
   }
 
-  recordingStop(): Promise<unknown> {
-    return Promise.resolve({ recording: false });
+  recordingStop(tabId: string): Promise<unknown> {
+    return Promise.resolve({ tabId, recording: false });
   }
 }
 
@@ -207,14 +207,16 @@ describe("M6 CDP browser command engine", () => {
     });
     await expect(
       engine.execute(request({ kind: "handleDialog", accept: true }), signal),
-    ).resolves.toEqual({ accept: true, promptText: undefined });
+    ).resolves.toEqual({ tabId: "tab-1", accept: true, promptText: undefined });
     await expect(engine.execute(request({ kind: "downloadPath" }), signal)).resolves.toEqual({
+      tabId: "tab-1",
       path: "downloads/file.pdf",
     });
     await expect(
       engine.execute(request({ kind: "recordingStart", path: "artifacts/session.webm" }), signal),
     ).resolves.toMatchObject({ recording: true });
     await expect(engine.execute(request({ kind: "recordingStop" }), signal)).resolves.toEqual({
+      tabId: "tab-1",
       recording: false,
     });
   });

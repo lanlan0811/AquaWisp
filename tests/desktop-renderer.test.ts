@@ -53,7 +53,7 @@ describe("M5 design-system desktop renderer", () => {
     expect(markup).toContain('aria-label="停止"');
     expect(markup).toContain("<svg");
     expect(markup).not.toMatch(/[😀-🙏]/u);
-    expect(markup).toContain('<webview src="about:blank"></webview>');
+    expect(markup).toContain('<webview data-browser-webview src="about:blank"></webview>');
     expect(markup).toContain('data-view-panel="settings"');
     expect(markup).toContain("data-knowledge-add");
     expect(markup).toContain("data-knowledge-list");
@@ -65,6 +65,9 @@ describe("M5 design-system desktop renderer", () => {
     expect(markup).toContain("data-source-detail-content");
     expect(markup).toContain('data-action-icon="terminal"');
     expect(markup).toContain('data-action-state-icon="verified"');
+    expect(markup).toContain("data-browser-address-form");
+    expect(markup).toContain('data-browser-command="back"');
+    expect(markup).toContain("data-browser-webviews");
     expect(markup).toContain('data-session-mode="plan"');
     expect(markup).toContain('data-session-mode="work"');
     expect(markup).toContain('data-session-mode="full_access"');
@@ -102,6 +105,8 @@ describe("M5 design-system desktop renderer", () => {
     expect(desktopRendererScript).toContain('runEvent.type === "action.unknown"');
     expect(desktopRendererScript).toContain("renderActionCard(detail)");
     expect(desktopRendererScript).toContain("payload.textContent = stringifyActionDetail");
+    expect(desktopRendererScript).toContain("api.browser.execute");
+    expect(desktopRendererScript).toContain("api.browser.onCreateTab");
     expect(desktopRendererScript).not.toContain("payload.innerHTML");
     expect(desktopRendererScript).toContain('action?.toolName === "kb.search"');
     expect(desktopRendererScript).toContain("sourceList.replaceChildren");

@@ -14,6 +14,13 @@ const channels = Object.freeze({
   knowledgeAddFiles: "aquawisp:knowledge:add-files",
   knowledgeRemove: "aquawisp:knowledge:remove",
   approvalResolve: "aquawisp:approval:resolve",
+  browserExecute: "aquawisp:browser:execute",
+  browserCancel: "aquawisp:browser:cancel",
+  browserState: "aquawisp:browser:state",
+  browserStateChanged: "aquawisp:browser:state-changed",
+  browserCreateTab: "aquawisp:browser:create-tab",
+  browserTabRegistered: "aquawisp:browser:tab-registered",
+  browserActivateTab: "aquawisp:browser:activate-tab",
 });
 contextBridge.exposeInMainWorld(
   "aquawisp",
@@ -36,6 +43,15 @@ contextBridge.exposeInMainWorld(
     approvals: Object.freeze({
       resolve: (request) => ipcRenderer.invoke(channels.approvalResolve, request),
     }),
+    browser: Object.freeze({
+      execute: (request) => ipcRenderer.invoke(channels.browserExecute, request),
+      cancel: (requestId) => ipcRenderer.invoke(channels.browserCancel, { requestId }),
+      state: () => ipcRenderer.invoke(channels.browserState),
+      onStateChanged: (listener) => listen(channels.browserStateChanged, listener),
+      onCreateTab: (listener) => listen(channels.browserCreateTab, listener),
+      onTabRegistered: (listener) => listen(channels.browserTabRegistered, listener),
+      onActivateTab: (listener) => listen(channels.browserActivateTab, listener),
+    }),
     settings: Object.freeze({
       get: () => ipcRenderer.invoke(channels.settingsGet),
       set: (settings) => ipcRenderer.invoke(channels.settingsSet, settings),
@@ -47,3 +63,9 @@ contextBridge.exposeInMainWorld(
     }),
   }),
 );
+
+function listen(channel, listener) {
+  const handler = (_event, message) => listener(message);
+  ipcRenderer.on(channel, handler);
+  return () => ipcRenderer.removeListener(channel, handler);
+}

@@ -26,13 +26,14 @@ export interface BrowserAutomationHost {
     signal: AbortSignal,
   ): Promise<{ readonly path: string; readonly bytes: number }>;
   handleDialog(
+    tabId: string,
     accept: boolean,
     promptText: string | undefined,
     signal: AbortSignal,
   ): Promise<unknown>;
-  downloadPath(signal: AbortSignal): Promise<unknown>;
-  recordingStart(path: string, signal: AbortSignal): Promise<unknown>;
-  recordingStop(signal: AbortSignal): Promise<unknown>;
+  downloadPath(tabId: string, signal: AbortSignal): Promise<unknown>;
+  recordingStart(tabId: string, path: string, signal: AbortSignal): Promise<unknown>;
+  recordingStop(tabId: string, signal: AbortSignal): Promise<unknown>;
 }
 
 const cdpEvaluationSchema = z.looseObject({
@@ -105,13 +106,20 @@ export class BrowserCommandEngine implements BrowserCommandExecutor {
       return await this.#host.closeTab(tabId, signal);
     }
     if (command.kind === "handleDialog") {
-      return await this.#host.handleDialog(command.accept, command.promptText, signal);
+      return await this.#host.handleDialog(
+        request.tabId,
+        command.accept,
+        command.promptText,
+        signal,
+      );
     }
-    if (command.kind === "downloadPath") return await this.#host.downloadPath(signal);
+    if (command.kind === "downloadPath")
+      return await this.#host.downloadPath(request.tabId, signal);
     if (command.kind === "recordingStart") {
-      return await this.#host.recordingStart(command.path, signal);
+      return await this.#host.recordingStart(request.tabId, command.path, signal);
     }
-    if (command.kind === "recordingStop") return await this.#host.recordingStop(signal);
+    if (command.kind === "recordingStop")
+      return await this.#host.recordingStop(request.tabId, signal);
 
     const tab = this.#requireTab(request.tabId);
     if (command.kind === "navigate") {

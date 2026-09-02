@@ -18,4 +18,4 @@ The right browser panel follows the AquaWisp design system with a 280px width, C
 
 ## Current boundary
 
-The visible webview, safe tab/CDP lifecycle, reliable command bridge, and Electron-independent command executor are in place. Screenshot persistence, tab lifecycle, downloads, dialogs, and recording are injected through a constrained host interface; the next step is to connect those adapters to Electron main and complete one-click knowledge ingestion. All web content and CDP observations remain untrusted and undergo structural and size validation.
+The visible webview, safe tab/CDP lifecycle, reliable command bridge, and complete command executor are in place. Electron main now owns CDP, multiple tabs, dialogs, and workspace-confined screenshot artifacts; renderer controls the address bar, history, reload, and tabs only through the narrow preload API. Downloads are confined to the runtime workspace. Recording and one-click knowledge ingestion remain as subsequent M6 features. All web content and CDP observations remain untrusted and undergo structural and size validation.

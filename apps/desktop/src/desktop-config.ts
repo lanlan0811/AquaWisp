@@ -45,6 +45,16 @@ const desktopConfigSchema = z
         maximumFailureMessageCharacters: z.number().int().positive().max(65_536),
       })
       .strict(),
+    browser: z
+      .object({
+        initialBackendGeneration: z.number().int().positive(),
+        requestTimeoutMs: z.number().int().positive().max(300_000),
+        tabAttachmentTimeoutMs: z.number().int().positive().max(60_000),
+        maximumTabs: z.number().int().positive().max(32),
+        downloadDirectoryName: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/u),
+        recordingUnavailableMessage: z.string().min(1).max(256),
+      })
+      .strict(),
     executionModes: z
       .array(
         z
@@ -136,6 +146,13 @@ const desktopConfigSchema = z
         knowledgeAddFiles: z.string().min(1),
         knowledgeRemove: z.string().min(1),
         approvalResolve: z.string().min(1),
+        browserExecute: z.string().min(1),
+        browserCancel: z.string().min(1),
+        browserState: z.string().min(1),
+        browserStateChanged: z.string().min(1),
+        browserCreateTab: z.string().min(1),
+        browserTabRegistered: z.string().min(1),
+        browserActivateTab: z.string().min(1),
       })
       .strict()
       .refine((channels) => {

@@ -25,6 +25,9 @@ describe("M5 sandbox preload", () => {
     expect(preload).toContain("remove: (request)");
     expect(preload).toContain("approvals: Object.freeze");
     expect(preload).toContain("resolve: (request)");
+    expect(preload).toContain("browser: Object.freeze");
+    expect(preload).toContain("execute: (request)");
+    expect(preload).toContain("onStateChanged: (listener)");
     expect(preload).toContain("settings: Object.freeze");
     expect(preload).not.toContain("decrypt");
     expect(preload).not.toContain("secrets: Object.freeze({\n      get:");

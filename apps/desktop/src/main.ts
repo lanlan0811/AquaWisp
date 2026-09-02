@@ -20,11 +20,14 @@ import {
   desktopSecretPresenceResultSchema,
   desktopSecretSetRequestSchema,
   desktopSettingsSchema,
+  jsonValueSchema,
   knowledgeIngestedFileSchema,
+  type RuntimeHostRequest,
   type DesktopSettings,
 } from "@aquawisp/contracts";
-import { browserPolicy, hardenWebviewPreferences, type BrowserTabPort } from "@aquawisp/browser";
+import { browserPolicy, hardenWebviewPreferences } from "@aquawisp/browser";
 import { getBuiltInModel } from "@aquawisp/models-catalog";
+import { runtimeHostConfig } from "@aquawisp/runtime";
 import {
   app,
   BrowserWindow,
@@ -36,7 +39,8 @@ import {
 } from "electron";
 
 import { createRuntimeEnvironment, desktopConfig } from "./desktop-config.js";
-import { browserTabs, registerBrowserTab, validateWebviewSource } from "./browser-host.js";
+import { browserTabs, validateWebviewSource } from "./browser-host.js";
+import { ElectronBrowserService } from "./electron-browser-service.js";
 import { createDesktopDocument } from "./renderer/ui.js";
 import { RuntimeProcessClient } from "./runtime-client.js";
 import { resolveDesktopRunSelection } from "./run-selection.js";
@@ -44,8 +48,10 @@ import { SecretVault } from "./secret-vault.js";
 import { DesktopSettingsStore } from "./settings-store.js";
 
 let runtime: RuntimeProcessClient | undefined;
+let browserService: ElectronBrowserService | undefined;
 let shutdownStarted = false;
 let authorizedWebContentsId: number | undefined;
+let browserGeneration = desktopConfig.browser.initialBackendGeneration - 1;
 
 function createWindow(runtimeConnected: boolean, settings: DesktopSettings): BrowserWindowType {
   const window = new BrowserWindow({
@@ -56,6 +62,28 @@ function createWindow(runtimeConnected: boolean, settings: DesktopSettings): Bro
       sandbox: true,
       webviewTag: true,
       preload: fileURLToPath(new URL("./preload.cjs", import.meta.url)),
+    },
+  });
+  browserGeneration += 1;
+  browserService?.dispose();
+  browserService = new ElectronBrowserService({
+    workspaceRoot: join(runtimeWorkingDirectory(), runtimeHostConfig.tools.workspaceDirectoryName),
+    backendGeneration: browserGeneration,
+    config: desktopConfig.browser,
+    registry: browserTabs,
+    transport: {
+      createTab: (message) => {
+        window.webContents.send(desktopConfig.ipcChannels.browserCreateTab, message);
+      },
+      tabRegistered: (message) => {
+        window.webContents.send(desktopConfig.ipcChannels.browserTabRegistered, message);
+      },
+      activateTab: (message) => {
+        window.webContents.send(desktopConfig.ipcChannels.browserActivateTab, message);
+      },
+      stateChanged: (state) => {
+        window.webContents.send(desktopConfig.ipcChannels.browserStateChanged, state);
+      },
     },
   });
   authorizedWebContentsId = window.webContents.id;
@@ -69,8 +97,8 @@ function createWindow(runtimeConnected: boolean, settings: DesktopSettings): Bro
     }
   });
   window.webContents.on("did-attach-webview", (_event, guest) => {
-    const port: BrowserTabPort = {
-      id: guest.id.toString(),
+    browserService?.registerGuest({
+      id: String(guest.id),
       currentUrl: () => guest.getURL() || browserPolicy.initialUrl,
       isDebuggerAttached: () => guest.debugger.isAttached(),
       attachDebugger: (version) => {
@@ -90,8 +118,22 @@ function createWindow(runtimeConnected: boolean, settings: DesktopSettings): Bro
       onDestroyed: (handler) => {
         guest.once("destroyed", handler);
       },
-    };
-    registerBrowserTab(port);
+      title: () => guest.getTitle(),
+      focus: () => {
+        guest.focus();
+      },
+      close: (options) => {
+        guest.close(options);
+      },
+      send: async (method, parameters) =>
+        (await guest.debugger.sendCommand(method, parameters)) as unknown,
+    });
+    guest.on("did-navigate", () => {
+      browserService?.navigationChanged(String(guest.id));
+    });
+    guest.once("destroyed", () => {
+      browserService?.unregisterGuest(String(guest.id));
+    });
   });
   window.webContents.on("will-navigate", (event) => {
     event.preventDefault();
@@ -154,7 +196,8 @@ app.on("before-quit", (event) => {
   if (runtime === undefined || shutdownStarted) return;
   event.preventDefault();
   shutdownStarted = true;
-  browserTabs.dispose();
+  browserService?.dispose();
+  browserService = undefined;
   void runtime.close().finally(() => {
     runtime = undefined;
     app.quit();
@@ -162,10 +205,7 @@ app.on("before-quit", (event) => {
 });
 
 async function startRuntime(): Promise<boolean> {
-  const runtimeDirectory = join(
-    app.getPath("userData"),
-    desktopConfig.runtime.workingDirectoryName,
-  );
+  const runtimeDirectory = runtimeWorkingDirectory();
   await mkdir(runtimeDirectory, { recursive: true });
   const hostPath = fileURLToPath(import.meta.resolve("@aquawisp/runtime/process-host"));
   runtime = new RuntimeProcessClient({
@@ -187,6 +227,7 @@ async function startRuntime(): Promise<boolean> {
         );
       }
     },
+    onHostRequest: handleRuntimeHostRequest,
   });
   runtime.start();
   try {
@@ -203,6 +244,21 @@ async function startRuntime(): Promise<boolean> {
 }
 
 function registerDesktopIpc(secretVault: SecretVault, settingsStore: DesktopSettingsStore): void {
+  ipcMain.handle(desktopConfig.ipcChannels.browserExecute, async (event, input: unknown) => {
+    assertAuthorizedRenderer(event);
+    if (browserService === undefined) throw new Error("Browser service is not available");
+    return await browserService.dispatch(input);
+  });
+  ipcMain.handle(desktopConfig.ipcChannels.browserCancel, (event, input: unknown) => {
+    assertAuthorizedRenderer(event);
+    if (browserService === undefined) throw new Error("Browser service is not available");
+    return { cancelled: browserService.cancel(input) };
+  });
+  ipcMain.handle(desktopConfig.ipcChannels.browserState, (event) => {
+    assertAuthorizedRenderer(event);
+    if (browserService === undefined) throw new Error("Browser service is not available");
+    return browserService.state();
+  });
   ipcMain.handle(desktopConfig.ipcChannels.runtimePing, async (event) => {
     assertAuthorizedRenderer(event);
     if (runtime === undefined) {
@@ -354,6 +410,19 @@ function registerDesktopIpc(secretVault: SecretVault, settingsStore: DesktopSett
     if (!response.ok) throw new Error("该审批已失效或不属于当前运行");
     return desktopApprovalResolveResultSchema.parse(response.result);
   });
+}
+
+function runtimeWorkingDirectory(): string {
+  return join(app.getPath("userData"), desktopConfig.runtime.workingDirectoryName);
+}
+
+async function handleRuntimeHostRequest(request: RuntimeHostRequest) {
+  const service = browserService;
+  if (service === undefined) throw new Error("Browser service is not available");
+  if (request.method === "browser.cancel") {
+    return jsonValueSchema.parse({ cancelled: service.cancel(request.params) });
+  }
+  return jsonValueSchema.parse(await service.dispatch(request.params));
 }
 
 async function requestKnowledgeState() {

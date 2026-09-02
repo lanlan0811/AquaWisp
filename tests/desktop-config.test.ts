@@ -33,6 +33,16 @@ describe("M5 desktop configuration", () => {
     ).toMatchObject({ icon: "terminal" });
   });
 
+  it("bounds the Electron browser host and keeps all browser IPC channels unique", () => {
+    expect(desktopConfig.browser.maximumTabs).toBeGreaterThan(0);
+    expect(desktopConfig.browser.requestTimeoutMs).toBeGreaterThanOrEqual(
+      desktopConfig.browser.tabAttachmentTimeoutMs,
+    );
+    expect(new Set(Object.values(desktopConfig.ipcChannels)).size).toBe(
+      Object.values(desktopConfig.ipcChannels).length,
+    );
+  });
+
   it("inherits only registered environment names and enables Electron Node mode", () => {
     const environment = createRuntimeEnvironment(
       {

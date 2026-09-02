@@ -21,7 +21,14 @@ if (
   typeof channels.knowledgeList !== "string" ||
   typeof channels.knowledgeAddFiles !== "string" ||
   typeof channels.knowledgeRemove !== "string" ||
-  typeof channels.approvalResolve !== "string"
+  typeof channels.approvalResolve !== "string" ||
+  typeof channels.browserExecute !== "string" ||
+  typeof channels.browserCancel !== "string" ||
+  typeof channels.browserState !== "string" ||
+  typeof channels.browserStateChanged !== "string" ||
+  typeof channels.browserCreateTab !== "string" ||
+  typeof channels.browserTabRegistered !== "string" ||
+  typeof channels.browserActivateTab !== "string"
 ) {
   throw new Error("Desktop IPC channel registry is invalid");
 }
@@ -42,6 +49,13 @@ const channels = Object.freeze({
   knowledgeAddFiles: ${JSON.stringify(channels.knowledgeAddFiles)},
   knowledgeRemove: ${JSON.stringify(channels.knowledgeRemove)},
   approvalResolve: ${JSON.stringify(channels.approvalResolve)},
+  browserExecute: ${JSON.stringify(channels.browserExecute)},
+  browserCancel: ${JSON.stringify(channels.browserCancel)},
+  browserState: ${JSON.stringify(channels.browserState)},
+  browserStateChanged: ${JSON.stringify(channels.browserStateChanged)},
+  browserCreateTab: ${JSON.stringify(channels.browserCreateTab)},
+  browserTabRegistered: ${JSON.stringify(channels.browserTabRegistered)},
+  browserActivateTab: ${JSON.stringify(channels.browserActivateTab)},
 });
 contextBridge.exposeInMainWorld(
   "aquawisp",
@@ -64,6 +78,15 @@ contextBridge.exposeInMainWorld(
     approvals: Object.freeze({
       resolve: (request) => ipcRenderer.invoke(channels.approvalResolve, request),
     }),
+    browser: Object.freeze({
+      execute: (request) => ipcRenderer.invoke(channels.browserExecute, request),
+      cancel: (requestId) => ipcRenderer.invoke(channels.browserCancel, { requestId }),
+      state: () => ipcRenderer.invoke(channels.browserState),
+      onStateChanged: (listener) => listen(channels.browserStateChanged, listener),
+      onCreateTab: (listener) => listen(channels.browserCreateTab, listener),
+      onTabRegistered: (listener) => listen(channels.browserTabRegistered, listener),
+      onActivateTab: (listener) => listen(channels.browserActivateTab, listener),
+    }),
     settings: Object.freeze({
       get: () => ipcRenderer.invoke(channels.settingsGet),
       set: (settings) => ipcRenderer.invoke(channels.settingsSet, settings),
@@ -75,6 +98,12 @@ contextBridge.exposeInMainWorld(
     }),
   }),
 );
+
+function listen(channel, listener) {
+  const handler = (_event, message) => listener(message);
+  ipcRenderer.on(channel, handler);
+  return () => ipcRenderer.removeListener(channel, handler);
+}
 `;
 
 const mode = process.argv[2] ?? "--compile";

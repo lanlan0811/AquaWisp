@@ -25,6 +25,14 @@
     "maximumFilesPerImport": 32,
     "maximumFailureMessageCharacters": 4096
   },
+  "browser": {
+    "initialBackendGeneration": 1,
+    "requestTimeoutMs": 120000,
+    "tabAttachmentTimeoutMs": 10000,
+    "maximumTabs": 8,
+    "downloadDirectoryName": "downloads",
+    "recordingUnavailableMessage": "当前浏览器录屏宿主尚未就绪"
+  },
   "executionModes": [
     {
       "id": "plan",
@@ -96,6 +104,13 @@
     "knowledgeList": "aquawisp:knowledge:list",
     "knowledgeAddFiles": "aquawisp:knowledge:add-files",
     "knowledgeRemove": "aquawisp:knowledge:remove",
-    "approvalResolve": "aquawisp:approval:resolve"
+    "approvalResolve": "aquawisp:approval:resolve",
+    "browserExecute": "aquawisp:browser:execute",
+    "browserCancel": "aquawisp:browser:cancel",
+    "browserState": "aquawisp:browser:state",
+    "browserStateChanged": "aquawisp:browser:state-changed",
+    "browserCreateTab": "aquawisp:browser:create-tab",
+    "browserTabRegistered": "aquawisp:browser:tab-registered",
+    "browserActivateTab": "aquawisp:browser:activate-tab"
   }
 }
