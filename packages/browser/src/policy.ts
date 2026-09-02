@@ -8,6 +8,7 @@ const browserPolicySchema = z
     initialUrl: z.literal("about:blank"),
     allowedProtocols: z.array(z.enum(["http:", "https:"])).min(1),
     debuggerProtocolVersion: z.string().min(1),
+    ambientContext: z.object({ includeSearch: z.boolean(), includeHash: z.boolean() }).strict(),
     automation: z
       .object({
         interactiveSelector: z.string().min(1).max(4_096),
@@ -51,4 +52,14 @@ export function assertBrowserUrl(value: string, policy = browserPolicy): URL | "
     throw new Error(`Browser URL protocol is not allowed: ${url.protocol}`);
   }
   return url;
+}
+
+export function browserUrlForAmbientContext(value: string, policy = browserPolicy): string {
+  const parsed = assertBrowserUrl(value, policy);
+  if (typeof parsed === "string") return parsed;
+  parsed.username = "";
+  parsed.password = "";
+  if (!policy.ambientContext.includeSearch) parsed.search = "";
+  if (!policy.ambientContext.includeHash) parsed.hash = "";
+  return parsed.toString();
 }

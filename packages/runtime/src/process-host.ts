@@ -75,6 +75,7 @@ export class RuntimeRunService {
   readonly #approval = new SessionApprovalCoordinator();
   readonly #contextConfig: RuntimeContextConfig;
   readonly #promptBundlePath: string | undefined;
+  readonly #browser: RuntimeBrowserToolPort | undefined;
   readonly #toolRuntime: Promise<BuiltInToolRuntime>;
   #activeRun: ActiveRuntimeRun | undefined;
 
@@ -82,6 +83,7 @@ export class RuntimeRunService {
     this.#workingDirectory = options.workingDirectory;
     this.#contextConfig = options.contextConfig ?? runtimeHostConfig.context;
     this.#promptBundlePath = options.promptBundlePath;
+    this.#browser = options.browser;
     this.#onEvent = options.onEvent;
     this.#createModel =
       options.createModel ??
@@ -183,6 +185,7 @@ export class RuntimeRunService {
       const toolRuntime = await this.#toolRuntime;
       const clock = new SystemClock();
       const ids = new RandomIdGenerator();
+      const ambientContext = this.#browser?.environment?.bind(this.#browser);
       const engine = new RunEngine({
         store: this.#store,
         model: this.#createModel(request.params),
@@ -197,6 +200,7 @@ export class RuntimeRunService {
           ...(this.#promptBundlePath === undefined
             ? {}
             : { promptBundlePath: this.#promptBundlePath }),
+          ...(ambientContext === undefined ? {} : { ambientContext }),
         }),
         policy: this.#policy ?? toolRuntime.policy(request.params.mode, clock, ids),
         executor: this.#executor ?? toolRuntime,

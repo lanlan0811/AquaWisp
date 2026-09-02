@@ -13,7 +13,7 @@ import {
   type ToolArtifactReference,
   type ToolResultExternalizer,
 } from "@aquawisp/context";
-import type { RunEvent } from "@aquawisp/contracts";
+import { jsonObjectSchema, type JsonObject, type RunEvent } from "@aquawisp/contracts";
 import type { ModelDefinition, ModelProtocol } from "@aquawisp/models-catalog";
 import { z } from "zod";
 
@@ -58,6 +58,7 @@ export interface PersistentConversationContextOptions {
   readonly reasoningLevel: string;
   readonly config: RuntimeContextConfig;
   readonly promptBundlePath?: string;
+  readonly ambientContext?: () => Promise<JsonObject>;
 }
 
 export class PersistentConversationContext implements RunContextPort {
@@ -69,6 +70,7 @@ export class PersistentConversationContext implements RunContextPort {
   readonly #checkpointStore: FileContextCheckpointStore;
   readonly #promptBundlePath: string;
   readonly #maximumPromptBundleBytes: number;
+  readonly #ambientContext: (() => Promise<JsonObject>) | undefined;
 
   constructor(options: PersistentConversationContextOptions) {
     this.#store = options.store;
@@ -100,6 +102,7 @@ export class PersistentConversationContext implements RunContextPort {
       options.promptBundlePath ??
       fileURLToPath(new URL("../resources/prompts/bundle.json", import.meta.url));
     this.#maximumPromptBundleBytes = options.config.maximumPromptBundleBytes;
+    this.#ambientContext = options.ambientContext;
   }
 
   async prepare(request: RunContextPreparationRequest) {
@@ -115,6 +118,7 @@ export class PersistentConversationContext implements RunContextPort {
       nextEventId: request.nextEventId,
     });
     const bundle = await loadPromptBundle(this.#promptBundlePath, this.#maximumPromptBundleBytes);
+    const ambient = await this.#loadAmbientContext();
     const compilation = await this.#manager.compile([
       {
         id: `system-${bundle.resourceVersion.slice("sha256:".length)}`,
@@ -124,6 +128,17 @@ export class PersistentConversationContext implements RunContextPort {
         provenanceEventIds: [],
       },
       ...contextItemsFromSession(this.#store, request.run.sessionId, request.run.id),
+      ...(ambient === undefined
+        ? []
+        : [
+            {
+              id: `ambient-browser-${request.run.id}`,
+              kind: "tool" as const,
+              content: JSON.stringify(ambient),
+              createdAt: request.run.createdAt,
+              provenanceEventIds: [],
+            },
+          ]),
     ]);
     await recordContextCompilation({
       store: this.#store,
@@ -138,6 +153,19 @@ export class PersistentConversationContext implements RunContextPort {
       items: compilation.items,
       emittedEvents: this.#store.listEvents(request.run.id).slice(eventsBeforePreparation),
     };
+  }
+
+  async #loadAmbientContext(): Promise<JsonObject | undefined> {
+    if (this.#ambientContext === undefined) return undefined;
+    try {
+      return jsonObjectSchema.parse(await this.#ambientContext());
+    } catch {
+      return {
+        source: "desktop-browser",
+        trust: "untrusted",
+        available: false,
+      };
+    }
   }
 }
 

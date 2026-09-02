@@ -151,4 +151,65 @@ describe("M2 production conversation context", () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
+
+  it("injects current browser state as untrusted ambient context without blocking conversation", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aquawisp-browser-context-"));
+    let observedContext: readonly ContextItem[] = [];
+    const service = new RuntimeRunService({
+      workingDirectory: directory,
+      onEvent: () => undefined,
+      browser: {
+        execute() {
+          return Promise.resolve({});
+        },
+        environment() {
+          return Promise.resolve({
+            source: "desktop-browser",
+            trust: "untrusted",
+            available: true,
+            activeTabId: "tab-1",
+            tabCount: 1,
+            tabs: [{ id: "tab-1", url: "https://example.test/report" }],
+          });
+        },
+      },
+      createModel: () => ({
+        async *reason(context, signal) {
+          signal.throwIfAborted();
+          await Promise.resolve();
+          observedContext = context.contextItems;
+          yield { kind: "decision", decision: { kind: "final", content: "已读取环境" } };
+        },
+      }),
+    });
+    try {
+      await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "browser-context-run",
+          method: "runtime.run.start",
+          params: {
+            sessionId: "browser-context-session",
+            userInput: "当前浏览器是什么状态？",
+            providerId: "bigmodel",
+            modelId: "glm-5.3",
+            protocol: "chat_completions",
+            reasoningLevel: "max",
+            mode: "plan",
+            apiKey: "fixture-key",
+          },
+        }),
+      );
+      const ambient = observedContext.at(-1);
+      expect(ambient).toMatchObject({ kind: "tool" });
+      expect(JSON.parse(ambient?.content ?? "null")).toMatchObject({
+        trust: "untrusted",
+        activeTabId: "tab-1",
+        tabs: [{ url: "https://example.test/report" }],
+      });
+    } finally {
+      service.close();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
 });

@@ -1,5 +1,6 @@
 import {
   assertBrowserUrl,
+  browserUrlForAmbientContext,
   BrowserTabRegistry,
   browserPolicy,
   hardenWebviewPreferences,
@@ -65,6 +66,11 @@ describe("M6 visible browser host", () => {
     expect(assertBrowserUrl("https://example.test")).toBeInstanceOf(URL);
     expect(assertBrowserUrl("about:blank")).toBe("about:blank");
     expect(() => assertBrowserUrl("file:///private.txt")).toThrow("not allowed");
+    expect(
+      browserUrlForAmbientContext(
+        "https://user:password@example.test/path?access_token=secret#private",
+      ),
+    ).toBe("https://example.test/path");
 
     const preferences = {
       nodeIntegration: true,

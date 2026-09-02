@@ -1,4 +1,4 @@
-import { browserCommandSchema } from "@aquawisp/browser";
+import { browserCommandSchema, browserUrlForAmbientContext } from "@aquawisp/browser";
 import { jsonObjectSchema, type JsonObject, type JsonValue } from "@aquawisp/contracts";
 import { z } from "zod";
 
@@ -28,6 +28,7 @@ export interface RuntimeBrowserToolPort {
     input: RuntimeBrowserToolInput,
     signal: AbortSignal,
   ): Promise<JsonValue>;
+  environment?(): Promise<JsonObject>;
 }
 
 const browserStateSchema = z
@@ -60,9 +61,7 @@ export class RuntimeBrowserHost implements RuntimeBrowserToolPort {
   ): Promise<JsonValue> {
     signal.throwIfAborted();
     const command = browserCommandSchema.parse(input.command);
-    const state = browserStateSchema.parse(
-      await this.#host.request("browser.state", {}, this.#requestTimeoutMs, signal),
-    );
+    const state = await this.#state(signal);
     const requestedTab = input.tabId;
     if (requestedTab !== undefined && !state.tabs.some(({ id }) => id === requestedTab)) {
       throw new Error(`Browser tab is not registered: ${requestedTab}`);
@@ -88,5 +87,26 @@ export class RuntimeBrowserHost implements RuntimeBrowserToolPort {
     } finally {
       signal.removeEventListener("abort", cancel);
     }
+  }
+
+  async environment(): Promise<JsonObject> {
+    const state = await this.#state();
+    return jsonObjectSchema.parse({
+      source: "desktop-browser",
+      trust: "untrusted",
+      available: true,
+      activeTabId: state.activeTabId,
+      tabCount: state.tabs.length,
+      tabs: state.tabs.map(({ id, url }) => ({
+        id,
+        url: browserUrlForAmbientContext(url),
+      })),
+    });
+  }
+
+  async #state(signal?: AbortSignal) {
+    return browserStateSchema.parse(
+      await this.#host.request("browser.state", {}, this.#requestTimeoutMs, signal),
+    );
   }
 }

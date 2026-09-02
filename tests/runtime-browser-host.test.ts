@@ -62,6 +62,28 @@ describe("M6 runtime browser host adapter", () => {
     ]);
   });
 
+  it("redacts browser URL credentials, queries, and fragments from ambient context", async () => {
+    const fixture = hostWithState({
+      backendGeneration: 7,
+      activeTabId: "tab-sensitive",
+      tabs: [
+        {
+          id: "tab-sensitive",
+          url: "https://user:password@example.test/report?access_token=secret#private",
+        },
+      ],
+    });
+
+    await expect(adapter(fixture.host).environment()).resolves.toEqual({
+      source: "desktop-browser",
+      trust: "untrusted",
+      available: true,
+      activeTabId: "tab-sensitive",
+      tabCount: 1,
+      tabs: [{ id: "tab-sensitive", url: "https://example.test/report" }],
+    });
+  });
+
   it("supports bootstrapping the first tab and rejects stale explicit tab ids", async () => {
     const empty = hostWithState({ backendGeneration: 2, activeTabId: null, tabs: [] });
     await expect(
@@ -90,6 +112,10 @@ describe("M6 runtime browser host adapter", () => {
 
   it("forwards cancellation using the action-scoped browser request id", async () => {
     const calls: HostCall[] = [];
+    let notifyExecute: (() => void) | undefined;
+    const executeStarted = new Promise<void>((resolvePromise) => {
+      notifyExecute = resolvePromise;
+    });
     const host: RuntimeHostRequestPort = {
       request(method, input, _timeout, signal) {
         calls.push({ method, input });
@@ -101,6 +127,7 @@ describe("M6 runtime browser host adapter", () => {
           });
         }
         if (method === "browser.cancel") return Promise.resolve({ cancelled: true });
+        notifyExecute?.();
         return new Promise<JsonValue>((_resolve, reject) => {
           signal?.addEventListener(
             "abort",
@@ -118,7 +145,7 @@ describe("M6 runtime browser host adapter", () => {
       { command: { kind: "waitForURL", url: "/done", timeoutMs: 1_000 } },
       controller.signal,
     );
-    await Promise.resolve();
+    await executeStarted;
     controller.abort(new Error("cancelled by test"));
     await expect(execution).rejects.toThrow("cancelled by test");
     expect(calls.at(-1)).toEqual({

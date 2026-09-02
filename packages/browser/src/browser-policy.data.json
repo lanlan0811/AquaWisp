@@ -3,6 +3,10 @@
   "initialUrl": "about:blank",
   "allowedProtocols": ["http:", "https:"],
   "debuggerProtocolVersion": "1.3",
+  "ambientContext": {
+    "includeSearch": false,
+    "includeHash": false
+  },
   "automation": {
     "interactiveSelector": "a[href],button,input,textarea,select,[role],[contenteditable=true],[tabindex]",
     "referenceAttribute": "data-aquawisp-ref",
