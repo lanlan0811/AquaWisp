@@ -73,4 +73,25 @@ describe("M6 runtime-to-desktop host RPC", () => {
     await expect(closing).rejects.toThrow("closed");
     expect(() => client.request("browser.cancel", { requestId: "after-close" })).toThrow("closed");
   });
+
+  it("drops an aborted request so a late host response cannot settle it twice", async () => {
+    const output = new PassThrough();
+    const client = new RuntimeHostClient({ output, requestTimeoutMs: 1_000, maxLineBytes: 65_536 });
+    const controller = new AbortController();
+    const pending = client.request("browser.state", {}, 1_000, controller.signal);
+    controller.abort(new Error("run cancelled"));
+    await expect(pending).rejects.toThrow("run cancelled");
+    expect(
+      client.accept(
+        runtimeHostResponseSchema.parse({
+          protocolVersion: 1,
+          requestId: "runtime-host-000001",
+          kind: "host.response",
+          ok: true,
+          result: { backendGeneration: 1, activeTabId: null, tabs: [] },
+        }),
+      ),
+    ).toBe(false);
+    client.close();
+  });
 });

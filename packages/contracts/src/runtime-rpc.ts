@@ -109,7 +109,7 @@ export const runtimeHostRequestSchema = z
   .object({
     ...runtimeRpcEnvelope,
     kind: z.literal("host.request"),
-    method: z.enum(["browser.execute", "browser.cancel"]),
+    method: z.enum(["browser.state", "browser.execute", "browser.cancel"]),
     params: jsonObjectSchema,
   })
   .strict();

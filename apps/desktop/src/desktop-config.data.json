@@ -76,6 +76,7 @@
       { "toolName": "filesystem.edit", "icon": "write" },
       { "toolName": "terminal.execute", "icon": "terminal" },
       { "toolName": "web.fetch", "icon": "browser" },
+      { "toolName": "browser.command", "icon": "browser" },
       { "toolName": "kb.add", "icon": "write" },
       { "toolName": "kb.search", "icon": "search" },
       { "toolName": "kb.list", "icon": "search" },

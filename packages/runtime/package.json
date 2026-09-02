@@ -20,6 +20,7 @@
     "resources"
   ],
   "dependencies": {
+    "@aquawisp/browser": "0.0.0",
     "@aquawisp/context": "0.0.0",
     "@aquawisp/contracts": "0.0.0",
     "@aquawisp/kb": "0.0.0",

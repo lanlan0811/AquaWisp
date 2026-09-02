@@ -17,8 +17,10 @@ import { getBuiltInModel } from "@aquawisp/models-catalog";
 
 import { CatalogModelPort } from "./catalog-model-port.js";
 import { SessionApprovalCoordinator } from "./approval-coordinator.js";
+import { RuntimeBrowserHost, type RuntimeBrowserToolPort } from "./browser-host-port.js";
 import { PersistentConversationContext } from "./conversation-context.js";
 import { SqliteEventStore } from "./event-store.js";
+import { RuntimeHostClient } from "./host-client.js";
 import { RuntimeKnowledgeLibrary } from "./knowledge-library.js";
 import type { ActionExecutorPort, ModelPort, PolicyPort, VerificationPort } from "./ports.js";
 import { BasicOutputVerifier, RandomIdGenerator, SystemClock } from "./production-ports.js";
@@ -58,6 +60,7 @@ export interface RuntimeRunServiceOptions {
   readonly policy?: PolicyPort;
   readonly executor?: ActionExecutorPort;
   readonly verifier?: VerificationPort;
+  readonly browser?: RuntimeBrowserToolPort;
 }
 
 export class RuntimeRunService {
@@ -120,6 +123,7 @@ export class RuntimeRunService {
       workingDirectory: options.workingDirectory,
       knowledgeLibrary: this.#knowledgeLibrary,
       config: runtimeHostConfig.tools,
+      ...(options.browser === undefined ? {} : { browser: options.browser }),
     });
   }
 
@@ -359,8 +363,18 @@ export function runRuntimeStdioHost(options: RuntimeStdioHostOptions): void {
 
 const invokedPath = process.argv[1];
 if (invokedPath !== undefined && fileURLToPath(import.meta.url) === invokedPath) {
+  const hostClient = new RuntimeHostClient({
+    output: process.stdout,
+    requestTimeoutMs: runtimeHostConfig.hostRpc.requestTimeoutMs,
+    maxLineBytes: runtimeHostConfig.hostRpc.maxLineBytes,
+  });
   const service = new RuntimeRunService({
     workingDirectory: process.cwd(),
+    browser: new RuntimeBrowserHost({
+      host: hostClient,
+      requestTimeoutMs: runtimeHostConfig.hostRpc.requestTimeoutMs,
+      fallbackTabId: runtimeHostConfig.hostRpc.browserFallbackTabId,
+    }),
     onEvent: (event) => {
       process.stdout.write(`${JSON.stringify(event)}\n`);
     },
@@ -373,7 +387,11 @@ if (invokedPath !== undefined && fileURLToPath(import.meta.url) === invokedPath)
       if (request.method === "runtime.shutdown" && response.ok) service.close();
       return response;
     },
+    onHostResponse: (response) => {
+      hostClient.accept(response);
+    },
     onShutdown: () => {
+      hostClient.close();
       process.stdin.unref();
     },
   });

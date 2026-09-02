@@ -610,6 +610,84 @@ describe("M5 runtime RPC", () => {
     }
   });
 
+  it("executes browser commands through the production action ledger", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aquawisp-runtime-browser-"));
+    const events: RunEvent[] = [];
+    const dispatched: { requestId: string; command: string }[] = [];
+    const service = new RuntimeRunService({
+      workingDirectory: directory,
+      onEvent: (message) => events.push(message.event),
+      browser: {
+        execute(requestId, input, signal) {
+          signal.throwIfAborted();
+          dispatched.push({
+            requestId,
+            command:
+              typeof input.command.kind === "string" ? input.command.kind : "invalid-command",
+          });
+          return Promise.resolve({
+            url: "https://example.test",
+            title: "Example",
+            nodes: [],
+          });
+        },
+      },
+      createModel: () =>
+        new DeterministicModel([
+          [
+            {
+              kind: "decision",
+              decision: {
+                kind: "action",
+                action: {
+                  toolName: "browser.command",
+                  toolRevision: "1",
+                  input: { command: { kind: "snapshot" } },
+                  sideEffect: true,
+                },
+              },
+            },
+          ],
+          [{ kind: "decision", decision: { kind: "final", content: "页面已读取" } }],
+        ]),
+    });
+    try {
+      const response = await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "rpc-browser-tool",
+          method: "runtime.run.start",
+          params: {
+            sessionId: "session-browser-tool",
+            userInput: "读取当前页面",
+            providerId: "bigmodel",
+            modelId: "glm-5.3",
+            protocol: "chat_completions",
+            reasoningLevel: "max",
+            mode: "work",
+            apiKey: "fixture-key",
+          },
+        }),
+      );
+      expect(response).toMatchObject({
+        ok: true,
+        result: { status: "completed", finalOutput: "页面已读取" },
+      });
+      expect(dispatched).toHaveLength(1);
+      expect(dispatched[0]).toMatchObject({ command: "snapshot" });
+      expect(events.find((event) => event.type === "action.authorized")?.payload).toMatchObject({
+        decision: { outcome: "allowed", reasonCode: "mode_auto_allowed" },
+      });
+      expect(events.find((event) => event.type === "action.observed")?.payload).toMatchObject({
+        observation: { ok: true, output: { title: "Example" } },
+      });
+      expect(events.some((event) => event.type === "action.verified")).toBe(true);
+    } finally {
+      service.close();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   it("spawns, calls, and gracefully shuts down an isolated runtime process", async () => {
     const directory = await mkdtemp(join(tmpdir(), "aquawisp-runtime-process-"));
     const client = new RuntimeProcessClient({

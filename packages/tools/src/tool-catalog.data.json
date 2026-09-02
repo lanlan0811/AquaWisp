@@ -148,6 +148,27 @@
       }
     },
     {
+      "id": "browser.command",
+      "modelName": "browser_command",
+      "revision": "1",
+      "riskLevel": "medium",
+      "sideEffect": true,
+      "description": "通过桌面浏览器宿主执行一个严格校验的浏览器命令。先 snapshot 获取当前页面引用，再用 ref 交互；导航会使旧 ref 失效。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tabId": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "command": {
+            "type": "object",
+            "properties": { "kind": { "type": "string", "minLength": 1, "maxLength": 64 } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["command"],
+        "additionalProperties": false
+      }
+    },
+    {
       "id": "kb.add",
       "modelName": "kb_add",
       "revision": "1",

@@ -25,6 +25,10 @@ export interface BuiltInToolInputMap {
     readonly timeoutMilliseconds?: number;
   };
   readonly "web.fetch": { readonly url: string };
+  readonly "browser.command": {
+    readonly tabId?: string;
+    readonly command: JsonObject;
+  };
   readonly "kb.add": { readonly path: string };
   readonly "kb.search": { readonly query: string; readonly limit?: number };
   readonly "kb.list": { readonly limit?: number };
@@ -41,6 +45,7 @@ const builtInToolIds = new Set<string>([
   "filesystem.edit",
   "terminal.execute",
   "web.fetch",
+  "browser.command",
   "kb.add",
   "kb.search",
   "kb.list",

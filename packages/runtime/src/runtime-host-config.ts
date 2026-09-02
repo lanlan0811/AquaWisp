@@ -14,6 +14,13 @@ const runtimeHostConfigSchema = z
     databaseFileName: safeFileNameSchema,
     maximumCycles: z.number().int().positive(),
     streamRecovery: z.object({ maximumAttempts: z.number().int().nonnegative().max(3) }).strict(),
+    hostRpc: z
+      .object({
+        requestTimeoutMs: z.number().int().positive().max(600_000),
+        maxLineBytes: z.number().int().positive().max(16_777_216),
+        browserFallbackTabId: z.string().min(1).max(128),
+      })
+      .strict(),
     knowledge: z
       .object({
         databaseFileName: safeFileNameSchema,

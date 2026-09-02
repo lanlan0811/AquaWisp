@@ -5,6 +5,11 @@
   "streamRecovery": {
     "maximumAttempts": 1
   },
+  "hostRpc": {
+    "requestTimeoutMs": 120000,
+    "maxLineBytes": 4194304,
+    "browserFallbackTabId": "browser-root"
+  },
   "knowledge": {
     "databaseFileName": "kb.sqlite",
     "listLimit": 500

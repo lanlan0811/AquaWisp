@@ -419,6 +419,7 @@ function runtimeWorkingDirectory(): string {
 async function handleRuntimeHostRequest(request: RuntimeHostRequest) {
   const service = browserService;
   if (service === undefined) throw new Error("Browser service is not available");
+  if (request.method === "browser.state") return jsonValueSchema.parse(service.state());
   if (request.method === "browser.cancel") {
     return jsonValueSchema.parse({ cancelled: service.cancel(request.params) });
   }

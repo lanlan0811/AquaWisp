@@ -18,6 +18,8 @@ interface PendingHostRequest {
   readonly resolve: (value: JsonValue) => void;
   readonly reject: (error: Error) => void;
   readonly timer: NodeJS.Timeout;
+  readonly signal?: AbortSignal;
+  readonly onAbort?: () => void;
 }
 
 export class RuntimeHostClient {
@@ -37,11 +39,13 @@ export class RuntimeHostClient {
   }
 
   request(
-    method: "browser.execute" | "browser.cancel",
+    method: "browser.state" | "browser.execute" | "browser.cancel",
     input: JsonObject,
     timeoutMs = this.#options.requestTimeoutMs,
+    signal?: AbortSignal,
   ): Promise<JsonValue> {
     if (this.#closed) throw new Error("Runtime host client is closed");
+    signal?.throwIfAborted();
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
       throw new Error("Runtime host request timeout must be a positive safe integer");
     }
@@ -59,10 +63,31 @@ export class RuntimeHostClient {
     }
     return new Promise<JsonValue>((resolve, reject) => {
       const timer = setTimeout(() => {
-        this.#pending.delete(request.requestId);
+        const pending = this.#pending.get(request.requestId);
+        this.#clearPending(request.requestId, pending);
         reject(new Error(`Runtime host request timed out: ${request.method}`));
       }, timeoutMs);
-      this.#pending.set(request.requestId, { resolve, reject, timer });
+      const onAbort =
+        signal === undefined
+          ? undefined
+          : (): void => {
+              const pending = this.#pending.get(request.requestId);
+              this.#clearPending(request.requestId, pending);
+              reject(
+                signal.reason instanceof Error ? signal.reason : new Error("Host request aborted"),
+              );
+            };
+      const pending: PendingHostRequest = {
+        resolve,
+        reject,
+        timer,
+        ...(signal === undefined ? {} : { signal }),
+        ...(onAbort === undefined ? {} : { onAbort }),
+      };
+      this.#pending.set(request.requestId, pending);
+      if (signal !== undefined && onAbort !== undefined) {
+        signal.addEventListener("abort", onAbort, { once: true });
+      }
       this.#options.output.write(encoded);
     });
   }
@@ -70,8 +95,7 @@ export class RuntimeHostClient {
   accept(response: RuntimeHostResponse): boolean {
     const pending = this.#pending.get(response.requestId);
     if (pending === undefined) return false;
-    clearTimeout(pending.timer);
-    this.#pending.delete(response.requestId);
+    this.#clearPending(response.requestId, pending);
     if (response.ok) pending.resolve(response.result);
     else pending.reject(new Error(`${response.error.code}: ${response.error.message}`));
     return true;
@@ -82,8 +106,20 @@ export class RuntimeHostClient {
     this.#closed = true;
     for (const pending of this.#pending.values()) {
       clearTimeout(pending.timer);
+      if (pending.signal !== undefined && pending.onAbort !== undefined) {
+        pending.signal.removeEventListener("abort", pending.onAbort);
+      }
       pending.reject(reason);
     }
     this.#pending.clear();
+  }
+
+  #clearPending(requestId: string, pending: PendingHostRequest | undefined): void {
+    if (pending === undefined) return;
+    clearTimeout(pending.timer);
+    if (pending.signal !== undefined && pending.onAbort !== undefined) {
+      pending.signal.removeEventListener("abort", pending.onAbort);
+    }
+    this.#pending.delete(requestId);
   }
 }

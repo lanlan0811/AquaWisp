@@ -7,6 +7,7 @@ import {
   type AuthorizationDecision,
   type Observation,
 } from "@aquawisp/contracts";
+import { browserCommandSchema } from "@aquawisp/browser";
 import {
   getToolDefinition,
   isBuiltInToolId,
@@ -22,6 +23,7 @@ import {
 } from "@aquawisp/tools";
 
 import { RuntimeKnowledgeLibrary } from "./knowledge-library.js";
+import type { RuntimeBrowserToolPort } from "./browser-host-port.js";
 import type { ActionExecutorPort, ClockPort, IdGeneratorPort, PolicyPort } from "./ports.js";
 import type { RuntimeToolConfig } from "./runtime-host-config.js";
 
@@ -29,6 +31,7 @@ export interface BuiltInToolRuntimeOptions {
   readonly workingDirectory: string;
   readonly knowledgeLibrary: RuntimeKnowledgeLibrary;
   readonly config: RuntimeToolConfig;
+  readonly browser?: RuntimeBrowserToolPort;
 }
 
 export class BuiltInToolRuntime implements ActionExecutorPort {
@@ -39,6 +42,7 @@ export class BuiltInToolRuntime implements ActionExecutorPort {
   readonly #search: WorkspaceSearch;
   readonly #terminal: TerminalExecutor;
   readonly #web: WebFetchClient;
+  readonly #browser: RuntimeBrowserToolPort | undefined;
 
   private constructor(
     options: BuiltInToolRuntimeOptions,
@@ -50,6 +54,7 @@ export class BuiltInToolRuntime implements ActionExecutorPort {
     this.#workspaceRoot = workspaceRoot;
     this.#knowledgeLibrary = options.knowledgeLibrary;
     this.#config = options.config;
+    this.#browser = options.browser;
     this.#filesystem = filesystem;
     this.#search = search;
     this.#terminal = terminal;
@@ -162,6 +167,13 @@ export class BuiltInToolRuntime implements ActionExecutorPort {
           signal,
         });
         break;
+      case "browser.command": {
+        if (this.#browser === undefined) throw new Error("Browser host is not available");
+        const input = parseToolInput("browser.command", action.input);
+        browserCommandSchema.parse(input.command);
+        output = await this.#browser.execute(action.id, input, signal);
+        break;
+      }
       case "kb.add":
         output = await this.#knowledgeLibrary.addFile(parseToolInput("kb.add", action.input).path);
         break;
@@ -220,6 +232,18 @@ export class BuiltInToolRuntime implements ActionExecutorPort {
           scope: "workspace",
           description: parseToolInput("web.fetch", action.input).url,
         };
+      case "browser.command": {
+        const input = parseToolInput("browser.command", action.input);
+        const command = browserCommandSchema.parse(input.command);
+        if (command.kind === "screenshot" || command.kind === "recordingStart") {
+          return await this.#pathTarget(command.path);
+        }
+        if (command.kind === "elementScreenshot") return await this.#pathTarget(command.path);
+        return {
+          scope: "workspace",
+          description: input.tabId ?? "当前浏览器标签页",
+        };
+      }
       default:
         return { scope: "workspace", description: "当前工作区" };
     }
@@ -263,6 +287,11 @@ function validateInput(action: ActionRecord): void {
     case "web.fetch":
       parseToolInput("web.fetch", action.input);
       break;
+    case "browser.command": {
+      const input = parseToolInput("browser.command", action.input);
+      browserCommandSchema.parse(input.command);
+      break;
+    }
     case "kb.add":
       parseToolInput("kb.add", action.input);
       break;

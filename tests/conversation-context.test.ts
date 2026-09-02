@@ -86,7 +86,7 @@ describe("M2 production conversation context", () => {
         checkpointDirectoryName: "checkpoints",
         artifactDirectoryName: "artifacts",
         charactersPerToken: 2,
-        maxTokens: 6000,
+        maxTokens: 7000,
         compressionThresholdRatio: 0.6,
         recentWindowTokens: 1000,
         maximumSummaryTokens: 500,
