@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "metric": "recall_at_3",
+  "minimumScore": 0.8,
+  "corpus": [
+    {
+      "id": "browser",
+      "title": "浏览器",
+      "content": "可视浏览器支持网页导航、表单填写和页面截图。"
+    },
+    {
+      "id": "context",
+      "title": "上下文",
+      "content": "长对话在超过预算阈值时自动压缩并保留检查点。"
+    },
+    {
+      "id": "knowledge",
+      "title": "知识库",
+      "content": "知识库使用中文全文检索、持久向量和来源引用。"
+    },
+    { "id": "policy", "title": "权限", "content": "高风险动作需要权限审批并写入动作账本。" },
+    { "id": "runtime", "title": "运行时", "content": "独立运行时按六阶段循环执行并可从事件恢复。" }
+  ],
+  "cases": [
+    { "query": "网页导航表单", "expectedDocumentId": "browser" },
+    { "query": "对话压缩检查点", "expectedDocumentId": "context" },
+    { "query": "中文全文检索来源引用", "expectedDocumentId": "knowledge" },
+    { "query": "高风险权限审批", "expectedDocumentId": "policy" },
+    { "query": "六阶段循环事件恢复", "expectedDocumentId": "runtime" }
+  ]
+}

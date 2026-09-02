@@ -35,3 +35,4 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Bounded Markdown, HTML, DOCX, XLSX, PPTX, and PDF extraction without system Office dependencies.
 - OpenAI-compatible remote or loopback embedding transport with encrypted-key injection boundaries and bounded responses.
 - Incremental FTS/vector indexing plus full-text, semantic, and RRF hybrid search with source attribution and highlights.
+- Unified file-ingestion pipeline and a versioned Chinese Recall@3 baseline covering the complete M4 format-to-source retrieval path.

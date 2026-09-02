@@ -17,6 +17,7 @@ AquaWisp avoids scattered behavior constants. Values that vary by package, platf
 | `packages/browser/src/browser-commands.data.json` | browser runtime            | Complete M6 command names and per-field request limits                                    | catalog/schema parity plus invalid-shape regression tests       |
 | `packages/kb/src/ingestion-formats.data.json`     | knowledge-base ingestion   | File extensions, MIME types, extraction formats and decompression/output resource limits  | zod uniqueness checks plus real-format and damaged-input tests  |
 | `packages/kb/src/kb-config.data.json`             | knowledge-base runtime     | Chunking, embedding transport, hybrid ranking, candidate and highlight limits             | zod cross-field validation plus indexing/retrieval tests        |
+| `evals/knowledge-retrieval-baseline.json`         | knowledge retrieval evals  | Versioned Chinese corpus, Recall@3 cases and acceptance threshold                         | zod schema plus hybrid retrieval quality test                   |
 | `apps/desktop/src/desktop-config.data.json`       | Electron main/preload      | Window bounds, runtime limits, environment allowlist, secret limits and IPC channels      | zod schema, preload drift check and packaged-process tests      |
 | `vitest.config.ts`                                | repository tooling         | Cross-platform test scheduling and timeout budget                                         | full verification on Windows and macOS CI                       |
 

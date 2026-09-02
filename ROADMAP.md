@@ -8,7 +8,7 @@ The roadmap targets the first complete desktop release, `0.1.0`. Milestones are 
 | M1        | V1 contracts, six-stage runtime, action ledger, SQLite event store, deterministic replay          | Complete |
 | M2        | OpenAI-compatible dual-protocol model client, model catalog, reasoning effort, context compaction | Planned  |
 | M3        | File, terminal and web tools; policy evaluation; cross-platform command execution                 | Planned  |
-| M4        | SQLite knowledge base, ingestion, Chinese FTS, vector search, RRF hybrid retrieval                | Planned  |
+| M4        | SQLite knowledge base, ingestion, Chinese FTS, vector search, RRF hybrid retrieval                | Complete |
 | M5        | Electron shell, conversation and knowledge UI, approvals, modes, settings                         | Planned  |
 | M6        | Visible embedded browser, CDP command engine, capture and knowledge ingestion                     | Planned  |
 | M7        | Progressive skill loader and built-in docx, xlsx, pptx, pdf, browser-use skills                   | Planned  |

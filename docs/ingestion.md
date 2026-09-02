@@ -2,6 +2,8 @@
 
 `packages/kb` 提供统一的本地文件文本抽取入口，覆盖 Markdown、纯文本、HTML、DOCX、PDF、XLSX 和 PPTX。`extractFileText` 根据文件扩展名与可选 MIME 类型选择解析器；两者冲突时立即拒绝，避免把伪装格式交给错误解析器。测试或已经持有字节数据的调用方可以使用 `extractBufferText`。
 
+`KnowledgeFileIngestionPipeline` 是应用层的统一入口：它要求调用方显式提供文档 ID、标题和更新时间，把路径转成跨平台 `file:` URI，然后串联抽取、分段、embedding、FTS5 和向量索引。空抽取会显式失败，不会生成看似成功的空文档。
+
 格式、扩展名、MIME 类型和资源上限集中定义在 `packages/kb/src/ingestion-formats.data.json`，由 Zod 在模块加载时严格校验。新增格式必须先更新注册表、实现解析器并补齐有效文件、损坏文件和资源上限测试，不能只添加扩展名。
 
 ## 解析策略

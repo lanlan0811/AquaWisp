@@ -3,6 +3,7 @@
 `HybridKnowledgeIndex` combines FTS5 candidates from `KnowledgeBase` with semantic candidates from `VectorIndex` using reciprocal-rank fusion. The default mode is `hybrid`; callers can explicitly request `full_text` or `semantic`. Every result includes chunk text, document ID, URI, title, chunk ordinal, matched channels, RRF score, and query-position highlights, allowing the conversation and knowledge views to render a traceable source directly.
 
 Candidate multiplier, RRF constant, channel weights, minimum vector score, highlight size, and final limits are centralized in `packages/kb/src/kb-config.data.json` and validated by a strict schema.
+The versioned Chinese retrieval corpus and threshold live in `evals/knowledge-retrieval-baseline.json`; ranking or tokenization changes must continue to meet its Recall@3 baseline.
 
 ## Incremental indexing
 

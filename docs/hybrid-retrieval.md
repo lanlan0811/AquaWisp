@@ -3,6 +3,7 @@
 `HybridKnowledgeIndex` 把 `KnowledgeBase` 的 FTS5 结果与 `VectorIndex` 的语义结果通过 RRF 合并。默认搜索模式是 `hybrid`，调用方也可以明确选择 `full_text` 或 `semantic`。最终结果包含 chunk 原文、文档 ID、URI、标题、chunk 序号、命中通道、RRF 分数和基于查询词定位的高亮片段，因此上层会话与知识库面板可以直接展示可回溯来源。
 
 检索权重、候选倍数、RRF 常数、向量最低分、高亮长度和最终数量上限集中在 `packages/kb/src/kb-config.data.json`。这些值由严格 schema 校验，不能在 UI、工具或 runtime 中另写一套默认值。
+中文召回验收数据位于 `evals/knowledge-retrieval-baseline.json`，当前按版本化语料和门槛校验 Recall@3；调整分词或排序策略时必须同时跑该基线。
 
 ## 增量索引
 
