@@ -2,6 +2,7 @@ import {
   builtInModelCatalog,
   getBuiltInModel,
   getBuiltInProvider,
+  modelDefinitionSchema,
   resolveReasoningLevel,
 } from "@aquawisp/models-catalog";
 import { describe, expect, it } from "vitest";
@@ -41,11 +42,33 @@ describe("M2 built-in model catalog", () => {
     expect(qwen.protocolPatches.chat_completions?.unset).toContain("thinking_budget");
   });
 
-  it("marks only Kimi maximum output as pending live verification", () => {
+  it("records the officially documented Kimi K3 limits and partial continuation patch", () => {
     const pending = builtInModelCatalog.models
       .filter(({ maxOutputTokensStatus }) => maxOutputTokensStatus === "pending_live_verification")
       .map(({ id }) => id);
-    expect(pending).toEqual(["kimi-k3"]);
+    const kimi = getBuiltInModel("kimi-k3");
+
+    expect(pending).toEqual([]);
+    expect(kimi.contextWindow).toBe(1_048_576);
+    expect(kimi.maxOutputTokens).toBe(1_048_576);
+    expect(kimi.maxOutputTokensStatus).toBe("official");
+    expect(kimi.streamRecovery?.assistantMessagePatches.chat_completions?.set.partial).toBe(true);
+    expect(kimi.sourceUrls).toContain("https://platform.kimi.com/docs/guide/kimi-k3-quickstart");
+  });
+
+  it("rejects recovery patches that can overwrite assistant identity or content", () => {
+    const kimi = getBuiltInModel("kimi-k3");
+
+    expect(() =>
+      modelDefinitionSchema.parse({
+        ...kimi,
+        streamRecovery: {
+          assistantMessagePatches: {
+            chat_completions: { set: { content: "replacement" }, unset: [] },
+          },
+        },
+      }),
+    ).toThrow(/cannot change assistant role or content/);
   });
 
   it("rejects unknown identifiers", () => {

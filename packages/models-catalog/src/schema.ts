@@ -4,7 +4,7 @@ import { z } from "zod";
 export const modelProtocolSchema = z.enum(["chat_completions", "responses"]);
 export const specificationStatusSchema = z.enum(["official", "pending_live_verification"]);
 
-const requestPatchSchema = z
+export const requestPatchSchema = z
   .object({
     set: z.record(z.string().min(1), jsonValueSchema),
     unset: z.array(z.string().min(1)),
@@ -80,6 +80,10 @@ export const modelDefinitionSchema = z
     supportsStructuredOutput: z.boolean(),
     inputModalities: z.array(z.enum(["text", "image", "video"])).min(1),
     reasoning: reasoningSchema,
+    streamRecovery: z
+      .object({ assistantMessagePatches: protocolPatchesSchema })
+      .strict()
+      .optional(),
     sourceUrls: z.array(z.url()).min(1),
   })
   .strict()
@@ -92,6 +96,31 @@ export const modelDefinitionSchema = z
             message: `reasoning patch uses unsupported protocol ${protocol}`,
           });
         }
+      }
+    }
+    for (const [protocol, patch] of Object.entries(
+      model.streamRecovery?.assistantMessagePatches ?? {},
+    )) {
+      if (!model.supportedProtocols.includes(modelProtocolSchema.parse(protocol))) {
+        context.addIssue({
+          code: "custom",
+          message: `stream recovery patch uses unsupported protocol ${protocol}`,
+        });
+      }
+      if (
+        patch !== undefined &&
+        [...Object.keys(patch.set), ...patch.unset].some(
+          (path) =>
+            path === "role" ||
+            path === "content" ||
+            path.startsWith("role.") ||
+            path.startsWith("content."),
+        )
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "stream recovery patches cannot change assistant role or content",
+        });
       }
     }
   });
@@ -163,6 +192,7 @@ export const modelCatalogSchema = z
   });
 
 export type ModelProtocol = z.infer<typeof modelProtocolSchema>;
+export type RequestPatch = z.infer<typeof requestPatchSchema>;
 export type ProviderDefinition = z.infer<typeof providerDefinitionSchema>;
 export type ModelDefinition = z.infer<typeof modelDefinitionSchema>;
 export type ModelCatalog = z.infer<typeof modelCatalogSchema>;

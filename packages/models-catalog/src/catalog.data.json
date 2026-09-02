@@ -390,9 +390,9 @@
       "id": "kimi-k3",
       "name": "Kimi K3",
       "providerId": "moonshot-kimi",
-      "contextWindow": 1000000,
-      "maxOutputTokens": 128000,
-      "maxOutputTokensStatus": "pending_live_verification",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 1048576,
+      "maxOutputTokensStatus": "official",
       "supportedProtocols": ["chat_completions"],
       "supportsTools": true,
       "supportsStructuredOutput": true,
@@ -424,7 +424,15 @@
           }
         ]
       },
-      "sourceUrls": ["https://www.kimi.ai/help/kimi-api/api-overview"]
+      "streamRecovery": {
+        "assistantMessagePatches": {
+          "chat_completions": {
+            "set": { "partial": true },
+            "unset": []
+          }
+        }
+      },
+      "sourceUrls": ["https://platform.kimi.com/docs/guide/kimi-k3-quickstart"]
     },
     {
       "id": "qwen3.8-max",

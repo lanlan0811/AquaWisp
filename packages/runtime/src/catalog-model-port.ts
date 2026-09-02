@@ -1,5 +1,6 @@
 import type { JsonObject, ModelSignal } from "@aquawisp/contracts";
 import {
+  applyRequestPatch,
   OpenAICompatibleClient,
   streamWithRecovery,
   type ModelStreamEvent,
@@ -9,6 +10,7 @@ import {
   getBuiltInModel,
   getBuiltInProvider,
   resolveReasoningLevel,
+  type ModelDefinition,
   type ModelProtocol,
 } from "@aquawisp/models-catalog";
 
@@ -26,7 +28,7 @@ export interface CatalogModelPortOptions {
 
 export class CatalogModelPort implements ModelPort {
   readonly #client: OpenAICompatibleClient;
-  readonly #modelId: string;
+  readonly #model: ModelDefinition;
   readonly #protocol: ModelProtocol;
   readonly #reasoningLevel: string;
   readonly #maximumRecoveryAttempts: number;
@@ -45,7 +47,7 @@ export class CatalogModelPort implements ModelPort {
       throw new Error("Runtime provider does not define the selected protocol URL");
     this.#reasoningLevel = resolveReasoningLevel(model, options.reasoningLevel).id;
     this.#maximumRecoveryAttempts = options.maximumRecoveryAttempts;
-    this.#modelId = model.id;
+    this.#model = model;
     this.#protocol = options.protocol;
     this.#client = new OpenAICompatibleClient({
       apiKey: options.apiKey,
@@ -73,7 +75,7 @@ export class CatalogModelPort implements ModelPort {
       this.#protocol === "chat_completions" ? { messages } : { input: messages };
     let content = "";
     const request: StreamModelRequest = {
-      model: this.#modelId,
+      model: this.#model.id,
       reasoningLevel: this.#reasoningLevel,
       body,
       signal,
@@ -83,7 +85,9 @@ export class CatalogModelPort implements ModelPort {
       request,
       maximumRecoveryAttempts: this.#maximumRecoveryAttempts,
       resume: ({ originalRequest, emittedEvents }) =>
-        Promise.resolve(createContinuationRequest(originalRequest, emittedEvents, this.#protocol)),
+        Promise.resolve(
+          createContinuationRequest(originalRequest, emittedEvents, this.#protocol, this.#model),
+        ),
     })) {
       if (event.kind === "text_delta") {
         content += event.delta;
@@ -107,6 +111,7 @@ function createContinuationRequest(
   originalRequest: StreamModelRequest,
   emittedEvents: readonly ModelStreamEvent[],
   protocol: ModelProtocol,
+  model: ModelDefinition,
 ): StreamModelRequest {
   const partialContent = emittedEvents
     .filter(
@@ -121,11 +126,15 @@ function createContinuationRequest(
   if (!Array.isArray(history)) {
     throw new Error(`Cannot recover ${protocol} stream without an array ${field} field`);
   }
+  const assistantMessage: JsonObject = { role: "assistant", content: partialContent };
+  const patch = model.streamRecovery?.assistantMessagePatches[protocol];
+  const continuationMessage =
+    patch === undefined ? assistantMessage : applyRequestPatch(assistantMessage, patch);
   return {
     ...originalRequest,
     body: {
       ...originalRequest.body,
-      [field]: [...history, { role: "assistant", content: partialContent }],
+      [field]: [...history, continuationMessage],
     },
   };
 }

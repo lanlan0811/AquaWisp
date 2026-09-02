@@ -6,6 +6,7 @@ import {
   resolveReasoningLevel,
   type ModelDefinition,
   type ModelProtocol,
+  type RequestPatch,
 } from "@aquawisp/models-catalog";
 
 export interface NormalizeReasoningRequestOptions {
@@ -42,13 +43,7 @@ export function normalizeReasoningRequest(
     );
   }
 
-  const request = structuredClone(options.request);
-  for (const path of patch.unset) {
-    unsetPath(request, parsePath(path));
-  }
-  for (const [path, value] of Object.entries(patch.set)) {
-    setPath(request, parsePath(path), structuredClone(value));
-  }
+  const request = applyRequestPatch(options.request, patch);
 
   const requestedLevel = options.requestedLevel ?? model.reasoning.defaultLevel;
   const revisionSource = stableSerialize({
@@ -67,6 +62,18 @@ export function normalizeReasoningRequest(
     request,
     revision: `sha256:${createHash("sha256").update(revisionSource).digest("hex")}`,
   };
+}
+
+export function applyRequestPatch(requestInput: JsonObject, patch: RequestPatch): JsonObject {
+  const request = structuredClone(requestInput);
+  for (const path of patch.unset) {
+    unsetPath(request, parsePath(path));
+  }
+  for (const [path, value] of Object.entries(patch.set)) {
+    setPath(request, parsePath(path), structuredClone(value));
+  }
+
+  return request;
 }
 
 function parsePath(path: string): readonly string[] {

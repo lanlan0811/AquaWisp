@@ -160,7 +160,7 @@ describe("M2 catalog-backed runtime model port", () => {
     expect(bodies[1]).toMatchObject({
       messages: [
         { role: "user", content: "继续测试" },
-        { role: "assistant", content: "未完" },
+        { role: "assistant", content: "未完", partial: true },
       ],
     });
     expect(signals).toEqual([

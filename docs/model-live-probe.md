@@ -20,4 +20,4 @@ macOS zsh 使用同名环境变量即可。协议只能是 `chat_completions` �
 
 ## 验证范围
 
-对四家内置供应商各执行一次探测，分别覆盖目录声明的协议：GLM、DeepSeek 覆盖 Chat Completions 与 Responses；Kimi、Qwen 覆盖 Chat Completions。若要验证 Kimi/Qwen 的最大输出限制，必须使用项目拥有者授权的测试凭据和明确成本预算；在没有这些条件时，目录保持 `pending_live_verification`，不会把推测值标为官方结论。
+对四家内置供应商各执行一次探测，分别覆盖目录声明的协议：GLM、DeepSeek 覆盖 Chat Completions 与 Responses；Kimi、Qwen 覆盖 Chat Completions。目录中的静态限制来自供应商官方文档；真实探测只验证当前凭据、网络连通性和响应结构。任何可能产生费用的极限输出压力测试，都必须另行取得项目拥有者授权并设定明确成本预算。
