@@ -11,6 +11,7 @@ AquaWisp M6 的浏览器基础使用 Electron `<webview>` 提供用户可见页�
 - guest 销毁时移除 tab，应用退出时主动解绑仍存活的调试会话；
 - 每个命令请求必须携带当前后端代际；桥接层会校验严格 schema、拒绝陈旧代际与同 ID 异载荷重放，并对执行强制超时和可观察取消；
 - `BrowserCommandEngine` 已实现导航、等待、状态、受限页面求值、键鼠/表单操作、页面与元素截图；结构化快照携带 `tag/role/name/text/ref/selector/xpath/rect/framePath`，ref 在导航后立即失效；
+- runtime 与桌面 main 之间使用独立的双向 host RPC 信封；runtime 发出 `browser.execute/browser.cancel`，桌面响应成功值或结构化错误，双方均执行 requestId、超时和单行大小限制；
 - 地址、协议与 CDP 版本来自 `packages/browser/src/browser-policy.data.json`。
 
 右侧浏览器面板遵循 AquaWisp 设计系统的 280px 宽度、中文标题和 SVG 图标。打包态测试要求主 renderer、webview renderer 与独立 runtime 同时存活。

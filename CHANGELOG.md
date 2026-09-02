@@ -6,6 +6,7 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 
 ### Added
 
+- Added bidirectional, versioned runtime-to-desktop host RPC for isolated browser execution and cancellation.
 - Added the M6 CDP browser command engine with bounded structured ref snapshots, navigation, waits, form interaction, screenshot artifacts, and host adapters for the full command catalog.
 - Hardened M6 browser request bridging with strict input parsing, backend-generation isolation, conflict-safe request idempotency, timeouts, and cancellation.
 - M0 npm-workspaces monorepo skeleton for the desktop app and runtime packages.

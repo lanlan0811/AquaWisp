@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { entityIdSchema, jsonObjectSchema } from "./common.js";
+import { entityIdSchema, jsonObjectSchema, jsonValueSchema } from "./common.js";
 import { approvalUserDecisionSchema } from "./approval.js";
 import { runEventSchema } from "./events.js";
 
@@ -105,11 +105,50 @@ export const runtimeRpcEventSchema = z
   })
   .strict();
 
-export const runtimeRpcMessageSchema = z.union([runtimeRpcResponseSchema, runtimeRpcEventSchema]);
+export const runtimeHostRequestSchema = z
+  .object({
+    ...runtimeRpcEnvelope,
+    kind: z.literal("host.request"),
+    method: z.enum(["browser.execute", "browser.cancel"]),
+    params: jsonObjectSchema,
+  })
+  .strict();
+
+export const runtimeHostResponseSchema = z.discriminatedUnion("ok", [
+  z
+    .object({
+      ...runtimeRpcEnvelope,
+      kind: z.literal("host.response"),
+      ok: z.literal(true),
+      result: jsonValueSchema,
+    })
+    .strict(),
+  z
+    .object({
+      ...runtimeRpcEnvelope,
+      kind: z.literal("host.response"),
+      ok: z.literal(false),
+      error: z.object({ code: z.string().min(1), message: z.string().min(1) }).strict(),
+    })
+    .strict(),
+]);
+
+export const runtimeRpcInputMessageSchema = z.union([
+  runtimeRpcRequestSchema,
+  runtimeHostResponseSchema,
+]);
+export const runtimeRpcOutputMessageSchema = z.union([
+  runtimeRpcResponseSchema,
+  runtimeRpcEventSchema,
+  runtimeHostRequestSchema,
+]);
+export const runtimeRpcMessageSchema = runtimeRpcOutputMessageSchema;
 
 export type RuntimeRpcRequest = z.infer<typeof runtimeRpcRequestSchema>;
 export type RuntimeRpcResponse = z.infer<typeof runtimeRpcResponseSchema>;
 export type RuntimeRpcEvent = z.infer<typeof runtimeRpcEventSchema>;
+export type RuntimeHostRequest = z.infer<typeof runtimeHostRequestSchema>;
+export type RuntimeHostResponse = z.infer<typeof runtimeHostResponseSchema>;
 export type RuntimeRpcCommand = RuntimeRpcRequest extends infer Request
   ? Request extends RuntimeRpcRequest
     ? Pick<Request, "method" | "params">

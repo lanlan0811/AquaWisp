@@ -4,6 +4,10 @@ import { createInterface } from "node:readline";
 import {
   runtimeRpcRequestSchema,
   runtimeRpcMessageSchema,
+  runtimeHostResponseSchema,
+  jsonValueSchema,
+  type JsonValue,
+  type RuntimeHostRequest,
   type RuntimeRpcCommand,
   type RuntimeRpcEvent,
   type RuntimeRpcResponse,
@@ -18,6 +22,7 @@ export interface RuntimeProcessClientOptions {
   readonly maxLineBytes: number;
   readonly maxStderrBytes: number;
   readonly onEvent?: (event: RuntimeRpcEvent) => void;
+  readonly onHostRequest?: (request: RuntimeHostRequest) => JsonValue | Promise<JsonValue>;
 }
 
 interface PendingRequest {
@@ -135,8 +140,12 @@ export class RuntimeProcessClient {
     let response: RuntimeRpcResponse;
     try {
       const message = runtimeRpcMessageSchema.parse(JSON.parse(line) as unknown);
-      if ("kind" in message) {
+      if ("kind" in message && message.kind === "event") {
         this.#options.onEvent?.(message);
+        return;
+      }
+      if ("kind" in message) {
+        void this.#handleHostRequest(message);
         return;
       }
       response = message;
@@ -150,6 +159,48 @@ export class RuntimeProcessClient {
     clearTimeout(pending.timer);
     this.#pending.delete(response.requestId);
     pending.resolve(response);
+  }
+
+  async #handleHostRequest(request: RuntimeHostRequest): Promise<void> {
+    let response;
+    try {
+      const handler = this.#options.onHostRequest;
+      if (handler === undefined) throw new Error("Desktop host request handler is unavailable");
+      response = runtimeHostResponseSchema.parse({
+        protocolVersion: 1,
+        requestId: request.requestId,
+        kind: "host.response",
+        ok: true,
+        result: jsonValueSchema.parse(await handler(request)),
+      });
+    } catch (error) {
+      response = runtimeHostResponseSchema.parse({
+        protocolVersion: 1,
+        requestId: request.requestId,
+        kind: "host.response",
+        ok: false,
+        error: {
+          code: "host_request_failed",
+          message: boundedErrorMessage(error, this.#options.maxLineBytes),
+        },
+      });
+    }
+    const encoded = `${JSON.stringify(response)}\n`;
+    if (Buffer.byteLength(encoded, "utf8") > this.#options.maxLineBytes) {
+      const fallback = runtimeHostResponseSchema.parse({
+        protocolVersion: 1,
+        requestId: request.requestId,
+        kind: "host.response",
+        ok: false,
+        error: {
+          code: "host_response_too_large",
+          message: "Desktop host response exceeded its configured limit",
+        },
+      });
+      this.#process?.stdin.write(`${JSON.stringify(fallback)}\n`);
+      return;
+    }
+    this.#process?.stdin.write(encoded);
   }
 
   #rejectAll(error: Error): void {
@@ -173,4 +224,10 @@ export class RuntimeProcessClient {
       });
     });
   }
+}
+
+function boundedErrorMessage(error: unknown, maximumLineBytes: number): string {
+  const message = error instanceof Error ? error.message : "Desktop host request failed";
+  const maximumCharacters = Math.max(1, Math.floor(maximumLineBytes / 4));
+  return message.slice(0, maximumCharacters) || "Desktop host request failed";
 }

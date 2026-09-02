@@ -5,12 +5,13 @@ import { fileURLToPath } from "node:url";
 
 import {
   entityIdSchema,
+  runtimeRpcInputMessageSchema,
   runtimeRpcEventSchema,
-  runtimeRpcRequestSchema,
   runtimeRpcResponseSchema,
   type RuntimeRpcEvent,
   type RuntimeRpcRequest,
   type RuntimeRpcResponse,
+  type RuntimeHostResponse,
 } from "@aquawisp/contracts";
 import { getBuiltInModel } from "@aquawisp/models-catalog";
 
@@ -31,6 +32,7 @@ export interface RuntimeStdioHostOptions {
   readonly output: Writable;
   readonly handleRequest?: RuntimeRpcHandler;
   readonly onShutdown?: () => void;
+  readonly onHostResponse?: (response: RuntimeHostResponse) => void;
 }
 
 export type RuntimeRpcHandler = (
@@ -332,7 +334,12 @@ export function runRuntimeStdioHost(options: RuntimeStdioHostOptions): void {
           const candidate = entityIdSchema.safeParse(parsed.requestId);
           if (candidate.success) requestId = candidate.data;
         }
-        request = runtimeRpcRequestSchema.parse(parsed);
+        const message = runtimeRpcInputMessageSchema.parse(parsed);
+        if ("kind" in message) {
+          options.onHostResponse?.(message);
+          return;
+        }
+        request = message;
         response = await handler(request);
       } catch (error) {
         response = errorResponse(

@@ -2,6 +2,7 @@ export * from "./action-ledger.js";
 export * from "./approval-coordinator.js";
 export * from "./catalog-model-port.js";
 export * from "./context-events.js";
+export * from "./host-client.js";
 export * from "./conversation-context.js";
 export * from "./deterministic.js";
 export * from "./event-store.js";
