@@ -10,10 +10,11 @@ AquaWisp M6 的浏览器基础使用 Electron `<webview>` 提供用户可见页�
 - 每个 guest 只注册一次，并固定附加配置中的 CDP 1.3；
 - guest 销毁时移除 tab，应用退出时主动解绑仍存活的调试会话；
 - 每个命令请求必须携带当前后端代际；桥接层会校验严格 schema、拒绝陈旧代际与同 ID 异载荷重放，并对执行强制超时和可观察取消；
+- `BrowserCommandEngine` 已实现导航、等待、状态、受限页面求值、键鼠/表单操作、页面与元素截图；结构化快照携带 `tag/role/name/text/ref/selector/xpath/rect/framePath`，ref 在导航后立即失效；
 - 地址、协议与 CDP 版本来自 `packages/browser/src/browser-policy.data.json`。
 
 右侧浏览器面板遵循 AquaWisp 设计系统的 280px 宽度、中文标题和 SVG 图标。打包态测试要求主 renderer、webview renderer 与独立 runtime 同时存活。
 
 ## 当前边界
 
-当前已建立可视 webview、安全 tab/CDP 生命周期，以及带严格输入校验、requestId 幂等、超时、取消和后端代际隔离的命令桥。后续 M6 工作还需把完整命令面、ref 快照、截图、下载、对话框、录屏与一键入库接到 main 侧执行器。任何网页内容和 CDP 观察仍按不可信数据处理。
+当前已建立可视 webview、安全 tab/CDP 生命周期、可靠命令桥和 Electron 无关的完整命令执行器。截图写入、tab 生命周期、下载、对话框与录屏通过受限宿主接口注入；下一步是把这些接口接到 Electron main，并完成一键采集入库。任何网页内容和 CDP 观察均按不可信数据经过大小与结构校验。

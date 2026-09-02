@@ -11,6 +11,9 @@ const browserCommandCatalogSchema = z
         requestIdCharacters: z.number().int().positive(),
         tabIdCharacters: z.number().int().positive(),
         refCharacters: z.number().int().positive(),
+        urlCharacters: z.number().int().positive(),
+        selectorCharacters: z.number().int().positive(),
+        frameDepth: z.number().int().positive(),
         textCharacters: z.number().int().positive(),
         expressionCharacters: z.number().int().positive(),
         pathCharacters: z.number().int().positive(),
@@ -33,7 +36,7 @@ const pathSchema = z.string().min(1).max(limits.pathCharacters);
 const timeoutSchema = z.number().int().positive().max(limits.timeoutMs);
 
 const commandSchemas = [
-  z.object({ kind: z.literal("navigate"), url: z.url() }).strict(),
+  z.object({ kind: z.literal("navigate"), url: z.url().max(limits.urlCharacters) }).strict(),
   z.object({ kind: z.literal("back") }).strict(),
   z.object({ kind: z.literal("forward") }).strict(),
   z.object({ kind: z.literal("reload") }).strict(),
@@ -49,7 +52,11 @@ const commandSchemas = [
       message: "waitFor requires text or ref",
     }),
   z
-    .object({ kind: z.literal("waitForURL"), url: z.string().min(1), timeoutMs: timeoutSchema })
+    .object({
+      kind: z.literal("waitForURL"),
+      url: z.string().min(1).max(limits.urlCharacters),
+      timeoutMs: timeoutSchema,
+    })
     .strict(),
   z.object({ kind: z.literal("snapshot") }).strict(),
   z.object({ kind: z.literal("screenshot"), path: pathSchema }).strict(),
@@ -77,7 +84,9 @@ const commandSchemas = [
     .object({ kind: z.literal("select"), ref: refSchema, values: z.array(textSchema).min(1) })
     .strict(),
   z.object({ kind: z.literal("check"), ref: refSchema, checked: z.boolean() }).strict(),
-  z.object({ kind: z.literal("newTab"), url: z.url().optional() }).strict(),
+  z
+    .object({ kind: z.literal("newTab"), url: z.url().max(limits.urlCharacters).optional() })
+    .strict(),
   z.object({ kind: z.literal("activateTab"), tabId: tabIdSchema }).strict(),
   z.object({ kind: z.literal("listTabs") }).strict(),
   z.object({ kind: z.literal("close"), tabId: tabIdSchema.optional() }).strict(),

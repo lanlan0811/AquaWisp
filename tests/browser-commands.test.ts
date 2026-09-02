@@ -46,6 +46,12 @@ describe("M6 browser command catalog", () => {
     expect(() =>
       browserCommandSchema.parse({ kind: "scroll", deltaX: 0, deltaY: 100_001 }),
     ).toThrow();
+    expect(() =>
+      browserCommandSchema.parse({
+        kind: "navigate",
+        url: `https://example.test/${"x".repeat(browserCommandCatalog.limits.urlCharacters)}`,
+      }),
+    ).toThrow();
     expect(() => browserCommandSchema.parse({ kind: "unknown" })).toThrow();
   });
 

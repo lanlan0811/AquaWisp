@@ -8,6 +8,18 @@ const browserPolicySchema = z
     initialUrl: z.literal("about:blank"),
     allowedProtocols: z.array(z.enum(["http:", "https:"])).min(1),
     debuggerProtocolVersion: z.string().min(1),
+    automation: z
+      .object({
+        interactiveSelector: z.string().min(1).max(4_096),
+        referenceAttribute: z.string().regex(/^data-[a-z0-9-]+$/u),
+        referencePrefix: z.string().regex(/^[a-z][a-z0-9-]*$/u),
+        maximumSnapshotElements: z.number().int().positive().max(10_000),
+        maximumNodeTextCharacters: z.number().int().positive().max(10_000),
+        maximumArtifactBase64Characters: z.number().int().positive().max(134_217_728),
+        waitPollIntervalMs: z.number().int().positive().max(10_000),
+        screenshotFormat: z.literal("png"),
+      })
+      .strict(),
   })
   .strict()
   .refine(
