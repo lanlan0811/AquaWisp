@@ -14,8 +14,14 @@ export interface ReasonContext {
   readonly runId: string;
   readonly cycle: number;
   readonly userInput: string;
-  readonly observations: readonly Observation[];
+  readonly observations: readonly ReasonObservation[];
   readonly contextItems: readonly ContextItem[];
+}
+
+export interface ReasonObservation {
+  readonly actionId: string;
+  readonly toolName: string;
+  readonly observation: Observation;
 }
 
 export interface RunContextPreparationRequest {
@@ -73,5 +79,5 @@ export interface ClockPort {
 }
 
 export interface IdGeneratorPort {
-  next(namespace: "run" | "trace" | "event" | "step" | "action"): string;
+  next(namespace: "run" | "trace" | "event" | "step" | "action" | "approval"): string;
 }

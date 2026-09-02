@@ -22,7 +22,10 @@ afterEach(async () => {
 async function workspace(): Promise<{ root: string; files: WorkspaceFilesystem }> {
   const root = await mkdtemp(join(tmpdir(), "AquaWisp M3 filesystem-"));
   temporaryDirectories.push(root);
-  return { root, files: await WorkspaceFilesystem.create({ workspaceRoot: root }) };
+  return {
+    root,
+    files: await WorkspaceFilesystem.create({ workspaceRoot: root, maximumFileBytes: 1_048_576 }),
+  };
 }
 
 describe("M3 workspace filesystem", () => {
@@ -72,5 +75,17 @@ describe("M3 workspace filesystem", () => {
     await expect(files.read("outside-link/secret.txt")).rejects.toBeInstanceOf(
       WorkspaceBoundaryError,
     );
+  });
+
+  it("enforces the configured byte ceiling for reads and writes", async () => {
+    const root = await mkdtemp(join(tmpdir(), "AquaWisp M3 bounded-filesystem-"));
+    temporaryDirectories.push(root);
+    const files = await WorkspaceFilesystem.create({ workspaceRoot: root, maximumFileBytes: 4 });
+    await writeFile(join(root, "large.txt"), "12345", "utf8");
+
+    await expect(files.read("large.txt")).rejects.toThrow("read limit");
+    await expect(
+      files.write({ path: "new.txt", content: "中文", expectedRevision: null }),
+    ).rejects.toThrow("write limit");
   });
 });

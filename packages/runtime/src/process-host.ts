@@ -20,16 +20,11 @@ import { PersistentConversationContext } from "./conversation-context.js";
 import { SqliteEventStore } from "./event-store.js";
 import { RuntimeKnowledgeLibrary } from "./knowledge-library.js";
 import type { ActionExecutorPort, ModelPort, PolicyPort, VerificationPort } from "./ports.js";
-import {
-  BasicOutputVerifier,
-  RandomIdGenerator,
-  RejectUnexpectedActionExecutor,
-  RejectUnexpectedActionPolicy,
-  SystemClock,
-} from "./production-ports.js";
+import { BasicOutputVerifier, RandomIdGenerator, SystemClock } from "./production-ports.js";
 import { RunEngine } from "./run-engine.js";
 import { runtimeHostConfig } from "./runtime-host-config.js";
 import type { RuntimeContextConfig } from "./runtime-host-config.js";
+import { BuiltInToolRuntime } from "./tool-runtime.js";
 
 export interface RuntimeStdioHostOptions {
   readonly input: Readable;
@@ -69,12 +64,13 @@ export class RuntimeRunService {
   readonly #workingDirectory: string;
   readonly #onEvent: RuntimeRunServiceOptions["onEvent"];
   readonly #createModel: NonNullable<RuntimeRunServiceOptions["createModel"]>;
-  readonly #policy: PolicyPort;
-  readonly #executor: ActionExecutorPort;
+  readonly #policy: PolicyPort | undefined;
+  readonly #executor: ActionExecutorPort | undefined;
   readonly #verifier: VerificationPort;
   readonly #approval = new SessionApprovalCoordinator();
   readonly #contextConfig: RuntimeContextConfig;
   readonly #promptBundlePath: string | undefined;
+  readonly #toolRuntime: Promise<BuiltInToolRuntime>;
   #activeRun: ActiveRuntimeRun | undefined;
 
   constructor(options: RuntimeRunServiceOptions) {
@@ -92,9 +88,10 @@ export class RuntimeRunService {
           reasoningLevel: params.reasoningLevel,
           apiKey: params.apiKey,
           maximumRecoveryAttempts: runtimeHostConfig.streamRecovery.maximumAttempts,
+          maximumToolArgumentsBytes: runtimeHostConfig.tools.maximumToolArgumentsBytes,
         }));
-    this.#policy = options.policy ?? new RejectUnexpectedActionPolicy();
-    this.#executor = options.executor ?? new RejectUnexpectedActionExecutor();
+    this.#policy = options.policy;
+    this.#executor = options.executor;
     this.#verifier = options.verifier ?? new BasicOutputVerifier();
     this.#store = new SqliteEventStore({
       databasePath: join(options.workingDirectory, runtimeHostConfig.databaseFileName),
@@ -116,6 +113,11 @@ export class RuntimeRunService {
       workingDirectory: options.workingDirectory,
       databaseFileName: runtimeHostConfig.knowledge.databaseFileName,
       listLimit: runtimeHostConfig.knowledge.listLimit,
+    });
+    this.#toolRuntime = BuiltInToolRuntime.create({
+      workingDirectory: options.workingDirectory,
+      knowledgeLibrary: this.#knowledgeLibrary,
+      config: runtimeHostConfig.tools,
     });
   }
 
@@ -172,6 +174,9 @@ export class RuntimeRunService {
     };
     this.#activeRun = activeRun;
     try {
+      const toolRuntime = await this.#toolRuntime;
+      const clock = new SystemClock();
+      const ids = new RandomIdGenerator();
       const engine = new RunEngine({
         store: this.#store,
         model: this.#createModel(request.params),
@@ -187,11 +192,11 @@ export class RuntimeRunService {
             ? {}
             : { promptBundlePath: this.#promptBundlePath }),
         }),
-        policy: this.#policy,
-        executor: this.#executor,
+        policy: this.#policy ?? toolRuntime.policy(request.params.mode, clock, ids),
+        executor: this.#executor ?? toolRuntime,
         verifier: this.#verifier,
-        clock: new SystemClock(),
-        ids: new RandomIdGenerator(),
+        clock,
+        ids,
         maxCycles: runtimeHostConfig.maximumCycles,
       });
       const run = await engine.start({

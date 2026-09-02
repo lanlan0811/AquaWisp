@@ -42,3 +42,4 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Catalog-driven Kimi K3 Partial Mode recovery plus officially documented 1M context and completion limits, without provider-specific branches in the generic runtime adapter.
 - Runtime-owned desktop knowledge management with a system file picker, bounded multi-file ingestion, local source/chunk status, and confirmed index-only removal.
 - Runtime-owned approval waits with exact-ID resolution, persisted allow/deny events, cancellation, exact session grants, and a design-system confirmation dialog.
+- Production model-to-tool execution for Chat Completions and Responses, with catalog-derived declarations, fragmented-call assembly, mode-aware policy, bounded observations, cancellation, and verified filesystem/search/terminal/web/knowledge adapters.

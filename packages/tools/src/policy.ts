@@ -81,16 +81,15 @@ export class ToolPolicyEvaluator {
     if (this.#rules.projectDeniedToolIds.includes(action.toolName)) {
       return this.#denied(toolCatalog.decisionCodes.projectDeny, "当前项目规则拒绝该工具。");
     }
-    if (toolCatalog.boundaryApprovalScopes.includes(target.scope)) {
-      return this.#approval(action, target, toolCatalog.decisionCodes.boundaryApproval);
-    }
-
     const modeDefinition = getModeDefinition(this.#mode);
     if (modeDefinition.denyRiskLevels.includes(definition.riskLevel)) {
       return this.#denied(
         toolCatalog.decisionCodes.modeDeny,
         "当前运行模式不允许该风险等级的动作。",
       );
+    }
+    if (toolCatalog.boundaryApprovalScopes.includes(target.scope)) {
+      return this.#approval(action, target, toolCatalog.decisionCodes.boundaryApproval);
     }
     if (modeDefinition.autoAllowRiskLevels.includes(definition.riskLevel)) {
       return {

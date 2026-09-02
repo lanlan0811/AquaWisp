@@ -31,12 +31,29 @@ describe("M3 workspace search", () => {
       workspaceRoot: root,
       maximumResults: 10,
       maximumFileBytes: 1024,
+      maximumMatchCharacters: 32,
     });
 
     expect(await search.glob("**/*.txt")).toEqual(["first.txt", "nested/second.txt"]);
     expect(await search.grep("needle")).toEqual([
-      { path: "first.txt", line: 1, text: "needle one" },
-      { path: "nested/second.txt", line: 1, text: "needle two" },
+      { path: "first.txt", line: 1, text: "needle one", truncated: false },
+      { path: "nested/second.txt", line: 1, text: "needle two", truncated: false },
+    ]);
+  });
+
+  it("bounds each grep match before returning aggregate results", async () => {
+    const root = await mkdtemp(join(tmpdir(), "AquaWisp M3 bounded search-"));
+    directories.push(root);
+    await writeFile(join(root, "long.txt"), "needle-0123456789", "utf8");
+    const search = await WorkspaceSearch.create({
+      workspaceRoot: root,
+      maximumResults: 10,
+      maximumFileBytes: 1024,
+      maximumMatchCharacters: 8,
+    });
+
+    expect(await search.grep("needle")).toEqual([
+      { path: "long.txt", line: 1, text: "needle-0", truncated: true },
     ]);
   });
 });

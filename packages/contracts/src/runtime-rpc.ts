@@ -36,6 +36,7 @@ export const runtimeRpcRequestSchema = z.discriminatedUnion("method", [
           modelId: entityIdSchema,
           protocol: z.enum(["chat_completions", "responses"]),
           reasoningLevel: entityIdSchema,
+          mode: z.enum(["plan", "work", "full_access"]),
           apiKey: z.string().min(1).max(16_384),
         })
         .strict(),

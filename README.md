@@ -84,6 +84,7 @@ API key 的系统加密与 renderer 权限边界见 [密钥存储与 IPC 边界]
 真实模型流式对话、停止操作和进程间数据边界见 [桌面端流式对话](docs/desktop-conversation.md)。
 本地文件选择、来源列表、分段统计与安全移除见 [桌面端知识库管理](docs/desktop-knowledge.md)。
 高风险动作确认、拒绝语义与会话内精确授权见 [桌面端审批与会话授权](docs/desktop-approvals.md)。
+模型工具声明、输入校验、模式权限和执行资源上限见 [工具注册表与权限求值](docs/tool-policy.md)。
 内嵌 webview 与 CDP 的安全边界见 [可视浏览器宿主](docs/browser-host.md)。
 同文件持久向量检索实现见 [SQLite 持久向量索引](docs/sqlite-vector.md)。
 本地文件格式、Office/PDF 抽取与资源边界见 [本地文件入库抽取](docs/ingestion.md)。

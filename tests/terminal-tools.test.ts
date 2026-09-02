@@ -56,4 +56,20 @@ describe("M3 terminal executor", () => {
     });
     expect(result.timedOut).toBe(true);
   });
+
+  it("terminates an active process when its Run signal is cancelled", async () => {
+    const { terminal } = await executor();
+    const controller = new AbortController();
+    const execution = terminal.execute(
+      {
+        executable: process.execPath,
+        arguments: ["-e", "setTimeout(() => {}, 10000)"],
+        cwd: ".",
+      },
+      controller.signal,
+    );
+
+    controller.abort(new Error("Run cancelled by test"));
+    await expect(execution).rejects.toThrow("Run cancelled by test");
+  });
 });

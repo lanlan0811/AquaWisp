@@ -260,6 +260,7 @@ function registerDesktopIpc(secretVault: SecretVault, settingsStore: DesktopSett
           modelId: settings.modelId,
           protocol: settings.protocol,
           reasoningLevel: settings.reasoningLevel,
+          mode: settings.mode,
           apiKey,
         },
       },

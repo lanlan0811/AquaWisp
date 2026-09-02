@@ -14,6 +14,7 @@ export type ModelStreamEvent =
       readonly callId: string;
       readonly name: string | null;
       readonly argumentsDelta: string;
+      readonly argumentsMode?: "append" | "replace";
       readonly sequence: number;
     }
   | { readonly kind: "usage"; readonly usage: JsonObject; readonly sequence: number }

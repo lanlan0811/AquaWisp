@@ -9,6 +9,25 @@
     "databaseFileName": "kb.sqlite",
     "listLimit": 500
   },
+  "tools": {
+    "workspaceDirectoryName": "workspace",
+    "maximumToolArgumentsBytes": 262144,
+    "maximumObservationBytes": 262144,
+    "filesystemMaximumFileBytes": 262144,
+    "searchMaximumResults": 500,
+    "searchMaximumFileBytes": 4194304,
+    "searchMaximumMatchCharacters": 4096,
+    "terminalMaximumOutputBytes": 65536,
+    "terminalDefaultTimeoutMilliseconds": 120000,
+    "webAllowedProtocols": ["http:", "https:"],
+    "webMaximumResponseBytes": 131072,
+    "knowledgeSearchDefaultLimit": 8,
+    "knowledgeSearchMaximumLimit": 50,
+    "knowledgeListDefaultLimit": 50,
+    "knowledgeListMaximumLimit": 500,
+    "explicitlyDeniedToolIds": [],
+    "projectDeniedToolIds": []
+  },
   "context": {
     "checkpointDirectoryName": "context-checkpoints",
     "artifactDirectoryName": "context-artifacts",

@@ -17,16 +17,188 @@
     "modeAllow": "mode_auto_allowed"
   },
   "tools": [
-    { "id": "filesystem.read", "revision": "1", "riskLevel": "low", "sideEffect": false },
-    { "id": "filesystem.glob", "revision": "1", "riskLevel": "low", "sideEffect": false },
-    { "id": "filesystem.grep", "revision": "1", "riskLevel": "low", "sideEffect": false },
-    { "id": "filesystem.write", "revision": "1", "riskLevel": "medium", "sideEffect": true },
-    { "id": "filesystem.edit", "revision": "1", "riskLevel": "medium", "sideEffect": true },
-    { "id": "terminal.execute", "revision": "1", "riskLevel": "medium", "sideEffect": true },
-    { "id": "web.fetch", "revision": "1", "riskLevel": "low", "sideEffect": false },
-    { "id": "kb.add", "revision": "1", "riskLevel": "medium", "sideEffect": true },
-    { "id": "kb.search", "revision": "1", "riskLevel": "low", "sideEffect": false },
-    { "id": "kb.list", "revision": "1", "riskLevel": "low", "sideEffect": false },
-    { "id": "kb.status", "revision": "1", "riskLevel": "low", "sideEffect": false }
+    {
+      "id": "filesystem.read",
+      "modelName": "filesystem_read",
+      "revision": "1",
+      "riskLevel": "low",
+      "sideEffect": false,
+      "description": "读取工作区内一个 UTF-8 文本文件，并返回内容与用于并发写入校验的修订值。",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "path": { "type": "string", "minLength": 1, "maxLength": 32768 } },
+        "required": ["path"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "filesystem.glob",
+      "modelName": "filesystem_glob",
+      "revision": "1",
+      "riskLevel": "low",
+      "sideEffect": false,
+      "description": "按 glob 模式列出工作区内文件，结果数量受运行时上限约束。",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "pattern": { "type": "string", "minLength": 1, "maxLength": 4096 } },
+        "required": ["pattern"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "filesystem.grep",
+      "modelName": "filesystem_grep",
+      "revision": "1",
+      "riskLevel": "low",
+      "sideEffect": false,
+      "description": "在工作区文本文件中查找字面文本，返回路径、行号和匹配行。",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "query": { "type": "string", "minLength": 1, "maxLength": 4096 } },
+        "required": ["query"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "filesystem.write",
+      "modelName": "filesystem_write",
+      "revision": "1",
+      "riskLevel": "medium",
+      "sideEffect": true,
+      "description": "在工作区内原子创建或整体替换 UTF-8 文本文件；必须提供读取所得修订值，新文件使用 null。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "minLength": 1, "maxLength": 32768 },
+          "content": { "type": "string", "maxLength": 262144 },
+          "expectedRevision": {
+            "anyOf": [{ "type": "string", "maxLength": 128 }, { "type": "null" }]
+          }
+        },
+        "required": ["path", "content", "expectedRevision"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "filesystem.edit",
+      "modelName": "filesystem_edit",
+      "revision": "1",
+      "riskLevel": "medium",
+      "sideEffect": true,
+      "description": "按唯一文本匹配编辑工作区文件；必须绑定当前修订值。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "minLength": 1, "maxLength": 32768 },
+          "expectedRevision": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "replacements": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "object",
+              "properties": {
+                "search": { "type": "string", "minLength": 1, "maxLength": 131072 },
+                "replace": { "type": "string", "maxLength": 131072 }
+              },
+              "required": ["search", "replace"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["path", "expectedRevision", "replacements"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "terminal.execute",
+      "modelName": "terminal_execute",
+      "revision": "1",
+      "riskLevel": "medium",
+      "sideEffect": true,
+      "description": "以参数数组直接启动命令，工作目录必须位于工作区；该平台边界动作始终需要审批。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "executable": { "type": "string", "minLength": 1, "maxLength": 32768 },
+          "arguments": {
+            "type": "array",
+            "maxItems": 512,
+            "items": { "type": "string", "maxLength": 32768 }
+          },
+          "cwd": { "type": "string", "minLength": 1, "maxLength": 32768 },
+          "timeoutMilliseconds": { "type": "integer", "minimum": 1, "maximum": 600000 }
+        },
+        "required": ["executable", "arguments", "cwd"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "web.fetch",
+      "modelName": "web_fetch",
+      "revision": "1",
+      "riskLevel": "low",
+      "sideEffect": false,
+      "description": "抓取一个公开 HTTP 或 HTTPS URL，响应正文会截断并标记为不可信内容。",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "url": { "type": "string", "minLength": 1, "maxLength": 32768 } },
+        "required": ["url"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "kb.add",
+      "modelName": "kb_add",
+      "revision": "1",
+      "riskLevel": "medium",
+      "sideEffect": true,
+      "description": "把一个受支持的本地文件解析并添加到知识库；工作区外路径需要精确审批。",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "path": { "type": "string", "minLength": 1, "maxLength": 32768 } },
+        "required": ["path"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "kb.search",
+      "modelName": "kb_search",
+      "revision": "1",
+      "riskLevel": "low",
+      "sideEffect": false,
+      "description": "检索本地知识库并返回带来源 URI 的相关文本分段。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string", "minLength": 1, "maxLength": 4096 },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 50 }
+        },
+        "required": ["query"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "kb.list",
+      "modelName": "kb_list",
+      "revision": "1",
+      "riskLevel": "low",
+      "sideEffect": false,
+      "description": "列出本地知识库来源及其来源元数据。",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "limit": { "type": "integer", "minimum": 1, "maximum": 500 } },
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "kb.status",
+      "modelName": "kb_status",
+      "revision": "1",
+      "riskLevel": "low",
+      "sideEffect": false,
+      "description": "读取本地知识库的文档数和分段数。",
+      "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false }
+    }
   ]
 }

@@ -1,4 +1,4 @@
-import type { ModelSignal } from "@aquawisp/contracts";
+import { jsonObjectSchema, type ModelSignal } from "@aquawisp/contracts";
 import { CatalogModelPort } from "@aquawisp/runtime";
 import { describe, expect, it } from "vitest";
 
@@ -33,6 +33,7 @@ describe("M2 catalog-backed runtime model port", () => {
       reasoningLevel: "max",
       apiKey: "fixture-key",
       maximumRecoveryAttempts: 1,
+      maximumToolArgumentsBytes: 262_144,
       fetchImplementation: (input, init) => {
         const requestInit = init ?? {};
         requestedUrl = input instanceof Request ? input.url : input.toString();
@@ -106,6 +107,7 @@ describe("M2 catalog-backed runtime model port", () => {
           reasoningLevel: "max",
           apiKey: "fixture-key",
           maximumRecoveryAttempts: 1,
+          maximumToolArgumentsBytes: 262_144,
         }),
     ).toThrow("does not belong");
   });
@@ -120,6 +122,7 @@ describe("M2 catalog-backed runtime model port", () => {
       reasoningLevel: "max",
       apiKey: "fixture-key",
       maximumRecoveryAttempts: 1,
+      maximumToolArgumentsBytes: 262_144,
       fetchImplementation: (_input, init) => {
         if (typeof init?.body !== "string") throw new Error("Expected a JSON request body");
         bodies.push(JSON.parse(init.body) as unknown);
@@ -168,6 +171,141 @@ describe("M2 catalog-backed runtime model port", () => {
       { kind: "stream_recovery", recoveryAttempt: 1, priorEventCount: 1 },
       { kind: "text_delta", delta: "成" },
       { kind: "decision", decision: { kind: "final", content: "未完成" } },
+    ]);
+  });
+
+  it("declares catalog tools and assembles one streamed Chat Completions tool call", async () => {
+    let requestedBody: unknown;
+    const port = new CatalogModelPort({
+      providerId: "bigmodel",
+      modelId: "glm-5.3",
+      protocol: "chat_completions",
+      reasoningLevel: "max",
+      apiKey: "fixture-key",
+      maximumRecoveryAttempts: 0,
+      maximumToolArgumentsBytes: 262_144,
+      fetchImplementation: (_input, init) => {
+        if (typeof init?.body !== "string") throw new Error("Expected a JSON request body");
+        requestedBody = JSON.parse(init.body) as unknown;
+        return Promise.resolve(
+          sseResponse([
+            'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call-read","function":{"name":"filesystem_read","arguments":"{\\"path\\":"}}]},"finish_reason":null}]}\n\n',
+            'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\\"notes.md\\"}"}}]},"finish_reason":"tool_calls"}]}\n\n',
+            "data: [DONE]\n\n",
+          ]),
+        );
+      },
+    });
+
+    const signals = await collect(
+      port.reason(
+        {
+          runId: "run-tool-chat",
+          cycle: 1,
+          userInput: "读取笔记",
+          observations: [],
+          contextItems: [],
+        },
+        new AbortController().signal,
+      ),
+    );
+
+    const chatBody = jsonObjectSchema.parse(requestedBody);
+    const chatTools = Array.isArray(chatBody.tools) ? chatBody.tools : [];
+    expect(chatBody.tool_choice).toBe("auto");
+    expect(
+      chatTools.some((rawTool) => {
+        const tool = jsonObjectSchema.safeParse(rawTool);
+        const fn = jsonObjectSchema.safeParse(tool.success ? tool.data.function : undefined);
+        return fn.success && fn.data.name === "filesystem_read";
+      }),
+    ).toBe(true);
+    expect(signals).toEqual([
+      {
+        kind: "decision",
+        decision: {
+          kind: "action",
+          action: {
+            toolName: "filesystem.read",
+            toolRevision: "1",
+            input: { path: "notes.md" },
+            sideEffect: false,
+          },
+        },
+      },
+    ]);
+  });
+
+  it("supports Responses tool calls and includes prior observations as untrusted input", async () => {
+    let requestedBody: unknown;
+    const port = new CatalogModelPort({
+      providerId: "deepseek",
+      modelId: "deepseek-v4-pro",
+      protocol: "responses",
+      reasoningLevel: "high",
+      apiKey: "fixture-key",
+      maximumRecoveryAttempts: 0,
+      maximumToolArgumentsBytes: 262_144,
+      fetchImplementation: (_input, init) => {
+        if (typeof init?.body !== "string") throw new Error("Expected a JSON request body");
+        requestedBody = JSON.parse(init.body) as unknown;
+        return Promise.resolve(
+          sseResponse([
+            'data: {"type":"response.output_item.added","item":{"type":"function_call","id":"item-kb","call_id":"call-kb","name":"kb_status","arguments":""}}\n\n',
+            'data: {"type":"response.function_call_arguments.delta","item_id":"item-kb","delta":"{}"}\n\n',
+            'data: {"type":"response.function_call_arguments.done","item_id":"item-kb","arguments":"{}"}\n\n',
+            'data: {"type":"response.completed","response":{}}\n\n',
+          ]),
+        );
+      },
+    });
+
+    const signals = await collect(
+      port.reason(
+        {
+          runId: "run-tool-responses",
+          cycle: 2,
+          userInput: "检查知识库",
+          observations: [
+            {
+              actionId: "action-previous",
+              toolName: "filesystem.read",
+              observation: { ok: true, output: { previous: "result" } },
+            },
+          ],
+          contextItems: [],
+        },
+        new AbortController().signal,
+      ),
+    );
+
+    const responsesBody = jsonObjectSchema.parse(requestedBody);
+    const responseInput = Array.isArray(responsesBody.input) ? responsesBody.input : [];
+    const observationInput = jsonObjectSchema.parse(responseInput[0]);
+    expect(observationInput).toMatchObject({ role: "user" });
+    expect(observationInput.content).toContain(
+      "[未经信任的工具观察 1；工具 filesystem.read；动作 action-previous]",
+    );
+    const responseTools = Array.isArray(responsesBody.tools) ? responsesBody.tools : [];
+    expect(
+      responseTools.some((rawTool) => {
+        const tool = jsonObjectSchema.safeParse(rawTool);
+        return tool.success && tool.data.type === "function" && tool.data.name === "kb_status";
+      }),
+    ).toBe(true);
+    expect(signals).toEqual([
+      {
+        kind: "decision",
+        decision: {
+          kind: "action",
+          action: {
+            toolName: "kb.status",
+            toolRevision: "1",
+            input: {},
+            sideEffect: false,
+          },
+        },
+      },
     ]);
   });
 });

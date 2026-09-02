@@ -17,7 +17,7 @@ export class SystemClock implements ClockPort {
 }
 
 export class RandomIdGenerator implements IdGeneratorPort {
-  next(namespace: "run" | "trace" | "event" | "step" | "action"): string {
+  next(namespace: "run" | "trace" | "event" | "step" | "action" | "approval"): string {
     return `${namespace}-${randomUUID()}`;
   }
 }

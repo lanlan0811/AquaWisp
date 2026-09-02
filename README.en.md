@@ -56,6 +56,7 @@ See [Desktop settings and secret boundary](docs/desktop-settings.en.md) for pers
 See [Desktop streaming conversations](docs/desktop-conversation.en.md) for live model output, cancellation, and process data boundaries.
 See [Desktop knowledge management](docs/desktop-knowledge.en.md) for local file selection, source lists, chunk statistics, and safe removal.
 See [Desktop approvals and session grants](docs/desktop-approvals.en.md) for high-risk confirmation, denial, and exact session-scoped authorization.
+See [Tool registry and policy evaluation](docs/tool-policy.en.md) for model declarations, strict inputs, mode policy, and execution resource limits.
 See [Visible browser host](docs/browser-host.en.md) for the embedded webview and CDP security boundary.
 See [Persistent SQLite vector index](docs/sqlite-vector.en.md) for the same-file `sqlite-vec` backend.
 See [Local file ingestion](docs/ingestion.en.md) for Office/PDF extraction and resource boundaries.

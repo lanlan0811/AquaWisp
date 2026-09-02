@@ -40,7 +40,7 @@ export class DeterministicIdGenerator implements IdGeneratorPort {
     this.#prefix = prefix;
   }
 
-  next(namespace: "run" | "trace" | "event" | "step" | "action"): string {
+  next(namespace: "run" | "trace" | "event" | "step" | "action" | "approval"): string {
     const nextValue = (this.#counters.get(namespace) ?? 0) + 1;
     this.#counters.set(namespace, nextValue);
     return `${this.#prefix}-${namespace}-${nextValue.toString().padStart(4, "0")}`;

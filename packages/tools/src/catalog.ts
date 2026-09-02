@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { jsonObjectSchema, type JsonObject } from "@aquawisp/contracts";
+
 import source from "./tool-catalog.data.json" with { type: "json" };
 
 const riskLevelSchema = z.enum(["low", "medium", "high"]);
@@ -38,9 +40,12 @@ export const toolCatalogSchema = z
         z
           .object({
             id: z.string().min(1),
+            modelName: z.string().regex(/^[A-Za-z0-9_-]+$/u),
             revision: z.string().min(1),
             riskLevel: riskLevelSchema,
             sideEffect: z.boolean(),
+            description: z.string().min(1),
+            inputSchema: jsonObjectSchema,
           })
           .strict(),
       )
@@ -54,6 +59,9 @@ export const toolCatalogSchema = z
     if (new Set(catalog.tools.map(({ id }) => id)).size !== catalog.tools.length) {
       context.addIssue({ code: "custom", message: "tool ids must be unique" });
     }
+    if (new Set(catalog.tools.map(({ modelName }) => modelName)).size !== catalog.tools.length) {
+      context.addIssue({ code: "custom", message: "tool model names must be unique" });
+    }
   });
 
 export const toolCatalog = toolCatalogSchema.parse(source);
@@ -65,6 +73,32 @@ export type TargetScope = z.infer<typeof targetScopeSchema>;
 
 export function getToolDefinition(toolId: string) {
   return toolCatalog.tools.find(({ id }) => id === toolId);
+}
+
+export function getToolDefinitionByModelName(modelName: string) {
+  return toolCatalog.tools.find(({ modelName: candidate }) => candidate === modelName);
+}
+
+export function getModelToolDefinitions(protocol: "chat_completions" | "responses"): JsonObject[] {
+  return toolCatalog.tools.map((tool) =>
+    jsonObjectSchema.parse(
+      protocol === "chat_completions"
+        ? {
+            type: "function",
+            function: {
+              name: tool.modelName,
+              description: tool.description,
+              parameters: tool.inputSchema,
+            },
+          }
+        : {
+            type: "function",
+            name: tool.modelName,
+            description: tool.description,
+            parameters: tool.inputSchema,
+          },
+    ),
+  );
 }
 
 export function getModeDefinition(mode: ExecutionMode) {

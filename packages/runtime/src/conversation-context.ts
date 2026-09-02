@@ -222,6 +222,7 @@ function contextItemsFromSession(
   ];
   for (const runId of orderedRunIds) {
     const runEvents = eventGroups.get(runId) ?? [];
+    const actions = new Map(store.listActions(runId).map((action) => [action.id, action] as const));
     const created = runEvents.find(({ type }) => type === "run.created");
     if (created?.type !== "run.created") continue;
     items.push({
@@ -236,7 +237,10 @@ function contextItemsFromSession(
       items.push({
         id: `tool-${event.eventId}`,
         kind: "tool",
-        content: JSON.stringify(event.payload.observation),
+        content: JSON.stringify({
+          toolName: actions.get(event.payload.actionId)?.toolName ?? "unknown",
+          observation: event.payload.observation,
+        }),
         createdAt: event.timestamp,
         provenanceEventIds: [event.eventId],
       });

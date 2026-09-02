@@ -86,6 +86,7 @@ export class OpenAICompatibleClient {
     let sequence = 0;
     let completed = false;
     let lastFinishReason: string | null = null;
+    const chatToolCallIds = new Map<string, string>();
     try {
       for await (const event of parseServerSentEvents(response.body)) {
         if (this.#protocol === "chat_completions") {
@@ -96,7 +97,7 @@ export class OpenAICompatibleClient {
             continue;
           }
           const parsed = parseJsonObject(event.data);
-          const events = parseChatChunk(parsed, sequence);
+          const events = parseChatChunk(parsed, sequence, chatToolCallIds);
           for (const modelEvent of events) {
             if (modelEvent.kind === "completed") {
               lastFinishReason = modelEvent.finishReason;
@@ -135,7 +136,11 @@ export class OpenAICompatibleClient {
   }
 }
 
-function parseChatChunk(chunk: JsonObject, sequence: number): readonly ModelStreamEvent[] {
+function parseChatChunk(
+  chunk: JsonObject,
+  sequence: number,
+  toolCallIds: Map<string, string>,
+): readonly ModelStreamEvent[] {
   const output: ModelStreamEvent[] = [];
   const choice = Array.isArray(chunk.choices) ? asObject(chunk.choices[0]) : undefined;
   const delta = choice === undefined ? undefined : asObject(choice.delta);
@@ -150,16 +155,18 @@ function parseChatChunk(chunk: JsonObject, sequence: number): readonly ModelStre
       const call = asObject(rawCall);
       const fn = asObject(call?.function);
       if (call !== undefined) {
+        const index =
+          typeof call.index === "number"
+            ? call.index.toString()
+            : typeof call.index === "string"
+              ? call.index
+              : "0";
+        if (typeof call.id === "string" && call.id !== "") {
+          toolCallIds.set(index, call.id);
+        }
         output.push({
           kind: "tool_call_delta",
-          callId:
-            typeof call.id === "string"
-              ? call.id
-              : typeof call.index === "number"
-                ? call.index.toString()
-                : typeof call.index === "string"
-                  ? call.index
-                  : "",
+          callId: typeof call.id === "string" ? call.id : (toolCallIds.get(index) ?? index),
           name: typeof fn?.name === "string" ? fn.name : null,
           argumentsDelta: typeof fn?.arguments === "string" ? fn.arguments : "",
           sequence: sequence + output.length,
@@ -198,6 +205,62 @@ function parseResponsesEvents(event: JsonObject, sequence: number): readonly Mod
         sequence,
       },
     ];
+  }
+  if (type === "response.function_call_arguments.done" && typeof event.arguments === "string") {
+    return [
+      {
+        kind: "tool_call_delta",
+        callId: typeof event.item_id === "string" ? event.item_id : "",
+        name: null,
+        argumentsDelta: event.arguments,
+        argumentsMode: "replace",
+        sequence,
+      },
+    ];
+  }
+  if (type === "response.output_item.added") {
+    const item = asObject(event.item);
+    if (item?.type === "function_call" && typeof item.name === "string") {
+      return [
+        {
+          kind: "tool_call_delta",
+          callId:
+            typeof item.id === "string"
+              ? item.id
+              : typeof item.call_id === "string"
+                ? item.call_id
+                : "",
+          name: item.name,
+          argumentsDelta: typeof item.arguments === "string" ? item.arguments : "",
+          argumentsMode: "replace",
+          sequence,
+        },
+      ];
+    }
+  }
+  if (type === "response.output_item.done") {
+    const item = asObject(event.item);
+    if (
+      item?.type === "function_call" &&
+      typeof item.name === "string" &&
+      typeof item.arguments === "string"
+    ) {
+      return [
+        {
+          kind: "tool_call_delta",
+          callId:
+            typeof item.id === "string"
+              ? item.id
+              : typeof item.call_id === "string"
+                ? item.call_id
+                : "",
+          name: item.name,
+          argumentsDelta: item.arguments,
+          argumentsMode: "replace",
+          sequence,
+        },
+      ];
+    }
   }
   if (type === "response.failed" || type === "error") {
     throw new ModelProtocolError(`Responses API reported ${type}`);

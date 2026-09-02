@@ -12,4 +12,5 @@ export * from "./process-host.js";
 export * from "./run-engine.js";
 export * from "./runtime-host-config.js";
 export * from "./session-reasoning.js";
+export * from "./tool-runtime.js";
 export * from "./smoke.js";

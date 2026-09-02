@@ -1,4 +1,5 @@
 import {
+  jsonObjectSchema,
   runtimeRpcEventSchema,
   runtimeRpcRequestSchema,
   runtimeRpcResponseSchema,
@@ -14,7 +15,7 @@ import {
   type PolicyPort,
 } from "@aquawisp/runtime";
 import { handleRuntimeRpcRequest, RuntimeRunService } from "@aquawisp/runtime/process-host";
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -95,6 +96,7 @@ describe("M5 runtime RPC", () => {
           modelId: "glm-5.3",
           protocol: "chat_completions",
           reasoningLevel: "max",
+          mode: "work",
           apiKey: "fixture-secret-never-persist",
         },
       });
@@ -121,6 +123,138 @@ describe("M5 runtime RPC", () => {
       expect(content.includes(Buffer.from("fixture-secret-never-persist"))).toBe(false);
     }
     await rm(directory, { recursive: true, force: true });
+  });
+
+  it("executes registered tools in production and enforces the requested run mode", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aquawisp-runtime-tools-"));
+    const workspaceDirectory = join(directory, "workspace");
+    await mkdir(workspaceDirectory);
+    await writeFile(join(workspaceDirectory, "notes.md"), "可验证的工具内容", "utf8");
+    await writeFile(
+      join(workspaceDirectory, "large-lines.txt"),
+      Array.from({ length: 400 }, (_, index) => `x${index.toString()}-${"a".repeat(800)}`).join(
+        "\n",
+      ),
+      "utf8",
+    );
+    const events: RunEvent[] = [];
+    let invocation = 0;
+    const service = new RuntimeRunService({
+      workingDirectory: directory,
+      onEvent: (message) => events.push(message.event),
+      createModel: () => {
+        invocation += 1;
+        if (invocation === 1) {
+          return new DeterministicModel([
+            [
+              {
+                kind: "decision",
+                decision: {
+                  kind: "action",
+                  action: {
+                    toolName: "filesystem.read",
+                    toolRevision: "1",
+                    input: { path: "notes.md" },
+                    sideEffect: false,
+                  },
+                },
+              },
+            ],
+            [{ kind: "decision", decision: { kind: "final", content: "读取完成" } }],
+          ]);
+        }
+        if (invocation === 2) {
+          return new DeterministicModel([
+            [
+              {
+                kind: "decision",
+                decision: {
+                  kind: "action",
+                  action: {
+                    toolName: "filesystem.write",
+                    toolRevision: "1",
+                    input: {
+                      path: "blocked.md",
+                      content: "不应写入",
+                      expectedRevision: null,
+                    },
+                    sideEffect: true,
+                  },
+                },
+              },
+            ],
+          ]);
+        }
+        return new DeterministicModel([
+          [
+            {
+              kind: "decision",
+              decision: {
+                kind: "action",
+                action: {
+                  toolName: "filesystem.grep",
+                  toolRevision: "1",
+                  input: { query: "x" },
+                  sideEffect: false,
+                },
+              },
+            },
+          ],
+          [{ kind: "decision", decision: { kind: "final", content: "大结果已处理" } }],
+        ]);
+      },
+    });
+    const request = (requestId: string) =>
+      runtimeRpcRequestSchema.parse({
+        protocolVersion: 1,
+        requestId,
+        method: "runtime.run.start",
+        params: {
+          sessionId: "session-production-tools",
+          userInput: "操作工作区",
+          providerId: "bigmodel",
+          modelId: "glm-5.3",
+          protocol: "chat_completions",
+          reasoningLevel: "max",
+          mode: "plan",
+          apiKey: "fixture-key",
+        },
+      });
+    try {
+      await expect(service.handle(request("rpc-tools-read"))).resolves.toMatchObject({
+        ok: true,
+        result: { status: "completed", finalOutput: "读取完成" },
+      });
+      expect(events.find((event) => event.type === "action.observed")?.payload).toMatchObject({
+        observation: { ok: true, output: { content: "可验证的工具内容" } },
+      });
+
+      await expect(service.handle(request("rpc-tools-write"))).resolves.toMatchObject({
+        ok: true,
+        result: { status: "failed", errorCode: "mode_denied" },
+      });
+      await expect(readFile(join(workspaceDirectory, "blocked.md"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+
+      const beforeLargeResult = events.length;
+      await expect(service.handle(request("rpc-tools-large-result"))).resolves.toMatchObject({
+        ok: true,
+        result: { status: "completed", finalOutput: "大结果已处理" },
+      });
+      const largeObservation = events
+        .slice(beforeLargeResult)
+        .find((event) => event.type === "action.observed");
+      if (largeObservation?.type !== "action.observed") {
+        throw new Error("Expected a committed observation for the large tool result");
+      }
+      const boundedOutput = jsonObjectSchema.parse(largeObservation.payload.observation.output);
+      expect(boundedOutput.truncated).toBe(true);
+      expect(typeof boundedOutput.originalBytes).toBe("number");
+    } finally {
+      service.close();
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 
   it("cancels an active run through a concurrent request and records run.cancelled", async () => {
@@ -168,6 +302,7 @@ describe("M5 runtime RPC", () => {
             modelId: "glm-5.3",
             protocol: "chat_completions",
             reasoningLevel: "max",
+            mode: "work",
             apiKey: "fixture-key",
           },
         }),
@@ -270,6 +405,7 @@ describe("M5 runtime RPC", () => {
           modelId: "glm-5.3",
           protocol: "chat_completions",
           reasoningLevel: "max",
+          mode: "work",
           apiKey: "fixture-key",
         },
       });
@@ -391,6 +527,80 @@ describe("M5 runtime RPC", () => {
         ok: true,
         result: { removed: true, state: { status: { documentCount: 0, chunkCount: 0 } } },
       });
+    } finally {
+      service.close();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("lets a production model action search the managed knowledge base with provenance", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aquawisp-runtime-kb-tool-"));
+    const sourcePath = join(directory, "检索来源.md");
+    await writeFile(sourcePath, "# 资料\n\n苍鹭计划使用蓝色封面并在周五交付。", "utf8");
+    const events: RunEvent[] = [];
+    const service = new RuntimeRunService({
+      workingDirectory: directory,
+      onEvent: (message) => events.push(message.event),
+      createModel: () =>
+        new DeterministicModel([
+          [
+            {
+              kind: "decision",
+              decision: {
+                kind: "action",
+                action: {
+                  toolName: "kb.search",
+                  toolRevision: "1",
+                  input: { query: "苍鹭 蓝色封面", limit: 5 },
+                  sideEffect: false,
+                },
+              },
+            },
+          ],
+          [{ kind: "decision", decision: { kind: "final", content: "检索完成" } }],
+        ]),
+    });
+    try {
+      const add = await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "rpc-kb-tool-add",
+          method: "runtime.kb.add_file",
+          params: { path: sourcePath },
+        }),
+      );
+      expect(add).toMatchObject({ ok: true });
+
+      const response = await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "rpc-kb-tool-run",
+          method: "runtime.run.start",
+          params: {
+            sessionId: "session-kb-tool",
+            userInput: "苍鹭计划的封面是什么颜色？",
+            providerId: "bigmodel",
+            modelId: "glm-5.3",
+            protocol: "chat_completions",
+            reasoningLevel: "max",
+            mode: "plan",
+            apiKey: "fixture-key",
+          },
+        }),
+      );
+      expect(response).toMatchObject({
+        ok: true,
+        result: { status: "completed", finalOutput: "检索完成" },
+      });
+      const observed = events.find((event) => event.type === "action.observed");
+      if (observed?.type !== "action.observed") throw new Error("Knowledge observation missing");
+      const results = observed.payload.observation.output;
+      if (!Array.isArray(results)) throw new Error("Knowledge observation must be an array");
+      const match = results
+        .map((item) => jsonObjectSchema.parse(item))
+        .find(({ title }) => title === "检索来源.md");
+      expect(match?.uri).toMatch(/^file:/u);
+      expect(match?.content).toContain("蓝色封面");
     } finally {
       service.close();
       await rm(directory, { recursive: true, force: true });

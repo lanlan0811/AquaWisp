@@ -5,4 +5,5 @@ export * from "./mcp.js";
 export * from "./policy.js";
 export * from "./search.js";
 export * from "./terminal.js";
+export * from "./tool-inputs.js";
 export * from "./web-fetch.js";

@@ -11,7 +11,7 @@
     "workingDirectoryName": "runtime",
     "requestTimeoutMs": 10000,
     "runRequestTimeoutMs": 600000,
-    "maxLineBytes": 1048576,
+    "maxLineBytes": 4194304,
     "maxStderrBytes": 65536,
     "runAsNodeEnvironmentVariable": "ELECTRON_RUN_AS_NODE",
     "inheritedEnvironment": ["PATH", "Path", "SystemRoot", "TMP", "TEMP", "LANG", "LC_ALL"]

@@ -1,4 +1,9 @@
-import { ToolPolicyEvaluator } from "@aquawisp/tools";
+import {
+  getModelToolDefinitions,
+  parseToolInput,
+  ToolPolicyEvaluator,
+  toolCatalog,
+} from "@aquawisp/tools";
 import { describe, expect, it } from "vitest";
 
 const timestamp = "2026-09-02T00:00:00.000Z";
@@ -65,6 +70,15 @@ describe("M3 tool policy evaluator", () => {
       outcome: "allowed",
       reasonCode: "mode_auto_allowed",
     });
+    const planBoundaryResult = evaluator("plan").authorize(action(), {
+      scope: "external",
+      description: "outside-workspace/file.md",
+    });
+    expect(planBoundaryResult.decision).toMatchObject({
+      outcome: "denied",
+      reasonCode: "mode_denied",
+    });
+    expect(planBoundaryResult.approvalRequest).toBeUndefined();
   });
 
   it("requires an auditable approval for a boundary crossing", () => {
@@ -99,5 +113,23 @@ describe("M3 tool policy evaluator", () => {
 
     expect(unknown.decision.reasonCode).toBe("unknown_tool");
     expect(malformed.decision.reasonCode).toBe("invalid_action");
+  });
+
+  it("keeps model declarations and strict input validation driven by the catalog", () => {
+    const chatTools = getModelToolDefinitions("chat_completions");
+    const responseTools = getModelToolDefinitions("responses");
+
+    expect(chatTools).toHaveLength(toolCatalog.tools.length);
+    expect(responseTools).toHaveLength(toolCatalog.tools.length);
+    expect(chatTools[0]).toMatchObject({
+      type: "function",
+      function: { name: "filesystem_read", parameters: { additionalProperties: false } },
+    });
+    expect(parseToolInput("filesystem.read", { path: "notes.md" })).toEqual({
+      path: "notes.md",
+    });
+    expect(() => parseToolInput("filesystem.read", { path: "notes.md", injected: true })).toThrow(
+      "must NOT have additional properties",
+    );
   });
 });

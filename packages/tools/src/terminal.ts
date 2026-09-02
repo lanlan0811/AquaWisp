@@ -49,7 +49,8 @@ export class TerminalExecutor {
     return new TerminalExecutor(options, await realpath(options.workspaceRoot));
   }
 
-  async execute(command: TerminalCommand): Promise<TerminalResult> {
+  async execute(command: TerminalCommand, signal?: AbortSignal): Promise<TerminalResult> {
+    signal?.throwIfAborted();
     if (command.executable.trim() === "") {
       throw new Error("Terminal executable cannot be empty");
     }
@@ -58,6 +59,7 @@ export class TerminalExecutor {
       throw new Error("timeoutMilliseconds must be a positive integer");
     }
     const cwd = await this.#workspaceDirectory(command.cwd);
+    signal?.throwIfAborted();
     return new Promise<TerminalResult>((resolveResult, rejectResult) => {
       const child = spawn(command.executable, [...command.arguments], {
         cwd,
@@ -71,10 +73,29 @@ export class TerminalExecutor {
       const stdout = new BoundedText(this.#maximumOutputBytes);
       const stderr = new BoundedText(this.#maximumOutputBytes);
       let timedOut = false;
+      let settled = false;
+      const settle = (operation: () => void): void => {
+        if (settled) return;
+        settled = true;
+        signal?.removeEventListener("abort", onAbort);
+        operation();
+      };
+      const onAbort = (): void => {
+        clearTimeout(timer);
+        child.kill();
+        settle(() => {
+          rejectResult(
+            signal?.reason instanceof Error
+              ? signal.reason
+              : new Error("Terminal command was cancelled"),
+          );
+        });
+      };
       const timer = setTimeout(() => {
         timedOut = true;
         child.kill();
       }, timeoutMilliseconds);
+      signal?.addEventListener("abort", onAbort, { once: true });
       child.stdout.on("data", (chunk: Buffer) => {
         stdout.append(chunk);
       });
@@ -83,17 +104,21 @@ export class TerminalExecutor {
       });
       child.once("error", (error) => {
         clearTimeout(timer);
-        rejectResult(error);
+        settle(() => {
+          rejectResult(error);
+        });
       });
       child.once("close", (exitCode, signal) => {
         clearTimeout(timer);
-        resolveResult({
-          exitCode,
-          signal,
-          stdout: stdout.text(),
-          stderr: stderr.text(),
-          timedOut,
-          outputTruncated: stdout.truncated || stderr.truncated,
+        settle(() => {
+          resolveResult({
+            exitCode,
+            signal,
+            stdout: stdout.text(),
+            stderr: stderr.text(),
+            timedOut,
+            outputTruncated: stdout.truncated || stderr.truncated,
+          });
         });
       });
     });

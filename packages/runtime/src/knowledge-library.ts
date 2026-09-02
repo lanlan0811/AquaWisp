@@ -10,6 +10,11 @@ import {
   type KnowledgeLibraryState,
 } from "@aquawisp/contracts";
 import { extractFileText, ingestionConfig, KnowledgeBase, knowledgeBaseConfig } from "@aquawisp/kb";
+import type {
+  KnowledgeBaseStatus,
+  KnowledgeDocumentSummary,
+  KnowledgeSearchResult,
+} from "@aquawisp/kb";
 
 export interface RuntimeKnowledgeLibraryOptions {
   readonly workingDirectory: string;
@@ -79,6 +84,18 @@ export class RuntimeKnowledgeLibrary {
 
   remove(documentId: string): boolean {
     return this.#knowledgeBase.remove(documentId);
+  }
+
+  search(query: string, limit: number): readonly KnowledgeSearchResult[] {
+    return this.#knowledgeBase.search(query, limit);
+  }
+
+  list(limit: number): readonly KnowledgeDocumentSummary[] {
+    return this.#knowledgeBase.list(limit);
+  }
+
+  status(): KnowledgeBaseStatus {
+    return this.#knowledgeBase.status();
   }
 
   close(): void {

@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
-import { lstat, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
+import { lstat, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 
 export interface WorkspaceFilesystemOptions {
   readonly workspaceRoot: string;
+  readonly maximumFileBytes: number;
 }
 
 export interface ReadFileResult {
@@ -38,22 +39,33 @@ export class RevisionConflictError extends Error {
 
 export class WorkspaceFilesystem {
   readonly #root: string;
+  readonly #maximumFileBytes: number;
 
-  private constructor(root: string) {
+  private constructor(root: string, maximumFileBytes: number) {
+    if (!Number.isInteger(maximumFileBytes) || maximumFileBytes <= 0) {
+      throw new Error("maximumFileBytes must be a positive integer");
+    }
     this.#root = root;
+    this.#maximumFileBytes = maximumFileBytes;
   }
 
   static async create(options: WorkspaceFilesystemOptions): Promise<WorkspaceFilesystem> {
-    return new WorkspaceFilesystem(await realpath(options.workspaceRoot));
+    return new WorkspaceFilesystem(await realpath(options.workspaceRoot), options.maximumFileBytes);
   }
 
   async read(path: string): Promise<ReadFileResult> {
     const absolutePath = await this.#existingPath(path);
+    if ((await stat(absolutePath)).size > this.#maximumFileBytes) {
+      throw new Error(`File exceeds the configured read limit: ${path}`);
+    }
     const content = await readFile(absolutePath, "utf8");
     return { content, revision: revisionFor(content) };
   }
 
   async write(options: WriteFileOptions): Promise<ReadFileResult> {
+    if (Buffer.byteLength(options.content, "utf8") > this.#maximumFileBytes) {
+      throw new Error(`Content exceeds the configured write limit: ${options.path}`);
+    }
     const absolutePath = await this.#writePath(options.path);
     const current = await readOptionalText(absolutePath);
     const currentRevision = current === undefined ? null : revisionFor(current);

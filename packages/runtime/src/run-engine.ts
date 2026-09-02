@@ -26,6 +26,7 @@ import type {
   ModelPort,
   PolicyPort,
   RunContextPort,
+  ReasonObservation,
   VerificationPort,
 } from "./ports.js";
 
@@ -114,7 +115,7 @@ export class RunEngine {
     this.#record(this.#store.createRun(run, this.#metadata()));
 
     const abortSignal = request.signal ?? new AbortController().signal;
-    const observations: Observation[] = [];
+    const observations: ReasonObservation[] = [];
 
     try {
       this.#enterStage(runId, "prepare", 1);
@@ -126,7 +127,10 @@ export class RunEngine {
 
         if (decision.kind === "final") {
           this.#enterStage(runId, "verify", cycle);
-          const verification = await this.#verifier.verifyFinal(decision.content, observations);
+          const verification = await this.#verifier.verifyFinal(
+            decision.content,
+            observations.map(({ observation }) => observation),
+          );
           if (!verification.success) {
             return this.#fail(runId, "final_verification_failed", verification.summary);
           }
@@ -231,7 +235,7 @@ export class RunEngine {
 
         this.#enterStage(runId, "observe", cycle);
         this.#record(this.#ledger.observe(action, observation, this.#metadata()));
-        observations.push(observation);
+        observations.push({ actionId: action.id, toolName: action.toolName, observation });
 
         this.#enterStage(runId, "verify", cycle);
         const verification = await this.#verifier.verifyAction(action, observation);
@@ -263,7 +267,7 @@ export class RunEngine {
   async #reason(
     run: RunRecord,
     cycle: number,
-    observations: readonly Observation[],
+    observations: readonly ReasonObservation[],
     contextItems: readonly ContextItem[],
     signal: AbortSignal,
   ): Promise<ModelDecision> {

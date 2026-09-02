@@ -5,18 +5,21 @@ export interface WorkspaceSearchOptions {
   readonly workspaceRoot: string;
   readonly maximumResults: number;
   readonly maximumFileBytes: number;
+  readonly maximumMatchCharacters: number;
 }
 
 export interface GrepMatch {
   readonly path: string;
   readonly line: number;
   readonly text: string;
+  readonly truncated: boolean;
 }
 
 export class WorkspaceSearch {
   readonly #root: string;
   readonly #maximumResults: number;
   readonly #maximumFileBytes: number;
+  readonly #maximumMatchCharacters: number;
 
   private constructor(root: string, options: WorkspaceSearchOptions) {
     if (!Number.isInteger(options.maximumResults) || options.maximumResults <= 0) {
@@ -25,9 +28,13 @@ export class WorkspaceSearch {
     if (!Number.isInteger(options.maximumFileBytes) || options.maximumFileBytes <= 0) {
       throw new Error("maximumFileBytes must be a positive integer");
     }
+    if (!Number.isInteger(options.maximumMatchCharacters) || options.maximumMatchCharacters <= 0) {
+      throw new Error("maximumMatchCharacters must be a positive integer");
+    }
     this.#root = root;
     this.#maximumResults = options.maximumResults;
     this.#maximumFileBytes = options.maximumFileBytes;
+    this.#maximumMatchCharacters = options.maximumMatchCharacters;
   }
 
   static async create(options: WorkspaceSearchOptions): Promise<WorkspaceSearch> {
@@ -62,7 +69,12 @@ export class WorkspaceSearch {
       const lines = (await readFile(absolute, "utf8")).split(/\r?\n/u);
       for (const [index, text] of lines.entries()) {
         if (text.includes(query)) {
-          matches.push({ path, line: index + 1, text });
+          matches.push({
+            path,
+            line: index + 1,
+            text: text.slice(0, this.#maximumMatchCharacters),
+            truncated: text.length > this.#maximumMatchCharacters,
+          });
           if (matches.length >= this.#maximumResults) {
             return matches;
           }
