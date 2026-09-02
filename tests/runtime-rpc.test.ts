@@ -1,5 +1,6 @@
 import {
   jsonObjectSchema,
+  knowledgeSearchResultSchema,
   runtimeRpcEventSchema,
   runtimeRpcRequestSchema,
   runtimeRpcResponseSchema,
@@ -15,7 +16,7 @@ import {
   type PolicyPort,
 } from "@aquawisp/runtime";
 import { handleRuntimeRpcRequest, RuntimeRunService } from "@aquawisp/runtime/process-host";
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -597,10 +598,12 @@ describe("M5 runtime RPC", () => {
       const results = observed.payload.observation.output;
       if (!Array.isArray(results)) throw new Error("Knowledge observation must be an array");
       const match = results
-        .map((item) => jsonObjectSchema.parse(item))
+        .map((item) => knowledgeSearchResultSchema.parse(item))
         .find(({ title }) => title === "检索来源.md");
       expect(match?.uri).toMatch(/^file:/u);
       expect(match?.content).toContain("蓝色封面");
+      expect(match).toMatchObject({ sourceType: "file", tags: [] });
+      expect(match?.updatedAt).toBe(new Date((await stat(sourcePath)).mtime).toISOString());
     } finally {
       service.close();
       await rm(directory, { recursive: true, force: true });

@@ -8,4 +8,4 @@ runtime 从 `packages/kb/src/ingestion-formats.data.json` 读取支持的扩展�
 
 “移除”操作先显示明确确认对话框。确认后只删除知识库中的来源记录与分段索引，不修改或删除原文件。操作完成后 renderer 使用 runtime 返回的权威状态重绘列表，不自行推测数据库状态。
 
-该接口目前负责来源管理和全文分段索引。语义 embedding 的供应商配置、对话中的检索来源卡片，以及 Agent 动作审批将在后续 M5 接线中继续通过 runtime 与事件契约完成。
+该接口目前负责来源管理和全文分段索引；对话中的检索命中会通过动作账本事件联动到[来源面板](desktop-sources.md)。语义 embedding 的供应商配置仍通过后续 runtime 配置接入。

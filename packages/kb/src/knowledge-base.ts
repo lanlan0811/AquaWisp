@@ -22,6 +22,9 @@ export interface KnowledgeSearchResult {
   readonly ordinal: number;
   readonly uri: string;
   readonly title: string;
+  readonly sourceType: "file" | "web" | "manual";
+  readonly tags: readonly string[];
+  readonly updatedAt: string;
   readonly content: string;
   readonly score: number;
 }
@@ -31,6 +34,9 @@ export interface KnowledgeChunk {
   readonly ordinal: number;
   readonly uri: string;
   readonly title: string;
+  readonly sourceType: "file" | "web" | "manual";
+  readonly tags: readonly string[];
+  readonly updatedAt: string;
   readonly content: string;
 }
 export interface PreparedKnowledgeChunk {
@@ -87,6 +93,9 @@ export class KnowledgeBase {
       ...chunk,
       uri: document.uri,
       title: document.title,
+      sourceType: document.sourceType,
+      tags: document.tags,
+      updatedAt: document.updatedAt,
     }));
     const hash = createHash("sha256").update(document.content).digest("hex");
     this.#transaction(() => {
@@ -128,7 +137,12 @@ export class KnowledgeBase {
       throw new Error("Knowledge search limit must be a positive integer");
     const rows = this.#database
       .prepare(
-        `SELECT chunks.id AS chunk_id, chunks.ordinal, documents.id AS document_id, documents.uri, documents.title, chunks.content, bm25(chunks_fts) AS score FROM chunks_fts JOIN chunks ON chunks.id = chunks_fts.chunk_id JOIN documents ON documents.id = chunks.document_id WHERE chunks_fts MATCH ? ORDER BY score LIMIT ?`,
+        `SELECT chunks.id AS chunk_id, chunks.ordinal, documents.id AS document_id, documents.uri,
+                documents.title, documents.source_type, documents.tags_json, documents.updated_at,
+                chunks.content, bm25(chunks_fts) AS score
+         FROM chunks_fts JOIN chunks ON chunks.id = chunks_fts.chunk_id
+         JOIN documents ON documents.id = chunks.document_id
+         WHERE chunks_fts MATCH ? ORDER BY score LIMIT ?`,
       )
       .all(buildFtsQuery(query), limit) as unknown as {
       chunk_id: string;
@@ -136,6 +150,9 @@ export class KnowledgeBase {
       ordinal: number;
       uri: string;
       title: string;
+      source_type: "file" | "web" | "manual";
+      tags_json: string;
+      updated_at: string;
       content: string;
       score: number;
     }[];
@@ -145,6 +162,9 @@ export class KnowledgeBase {
       ordinal: row.ordinal,
       uri: row.uri,
       title: row.title,
+      sourceType: row.source_type,
+      tags: JSON.parse(row.tags_json) as string[],
+      updatedAt: row.updated_at,
       content: row.content,
       score: row.score,
     }));
@@ -153,7 +173,8 @@ export class KnowledgeBase {
     if (id.trim() === "") throw new Error("Knowledge chunk ID cannot be empty");
     const row = this.#database
       .prepare(
-        `SELECT chunks.id, chunks.document_id, chunks.ordinal, documents.uri, documents.title, chunks.content
+        `SELECT chunks.id, chunks.document_id, chunks.ordinal, documents.uri, documents.title,
+                documents.source_type, documents.tags_json, documents.updated_at, chunks.content
          FROM chunks JOIN documents ON documents.id = chunks.document_id
          WHERE chunks.id = ?`,
       )
@@ -164,7 +185,8 @@ export class KnowledgeBase {
     if (documentId.trim() === "") throw new Error("Knowledge document ID cannot be empty");
     const rows = this.#database
       .prepare(
-        `SELECT chunks.id, chunks.document_id, chunks.ordinal, documents.uri, documents.title, chunks.content
+        `SELECT chunks.id, chunks.document_id, chunks.ordinal, documents.uri, documents.title,
+                documents.source_type, documents.tags_json, documents.updated_at, chunks.content
          FROM chunks JOIN documents ON documents.id = chunks.document_id
          WHERE chunks.document_id = ? ORDER BY chunks.ordinal ASC`,
       )
@@ -239,6 +261,9 @@ interface ChunkRow {
   readonly ordinal: number;
   readonly uri: string;
   readonly title: string;
+  readonly source_type: "file" | "web" | "manual";
+  readonly tags_json: string;
+  readonly updated_at: string;
   readonly content: string;
 }
 
@@ -249,6 +274,9 @@ function mapChunk(row: ChunkRow): KnowledgeChunk {
     ordinal: row.ordinal,
     uri: row.uri,
     title: row.title,
+    sourceType: row.source_type,
+    tags: JSON.parse(row.tags_json) as string[],
+    updatedAt: row.updated_at,
     content: row.content,
   };
 }

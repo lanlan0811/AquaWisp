@@ -44,7 +44,23 @@ export const knowledgeIngestedFileSchema = z
   })
   .strict();
 
+export const knowledgeSearchResultSchema = z
+  .object({
+    chunkId: entityIdSchema,
+    documentId: entityIdSchema,
+    ordinal: z.number().int().nonnegative(),
+    uri: z.string().min(1).max(32_768).pipe(z.url()),
+    title: z.string().min(1).max(1_024),
+    sourceType: z.enum(["file", "web", "manual"]),
+    tags: z.array(z.string().min(1).max(128)).max(128),
+    updatedAt: timestampSchema,
+    content: z.string().min(1).max(1_048_576),
+    score: z.number(),
+  })
+  .strict();
+
 export type KnowledgeFormat = z.infer<typeof knowledgeFormatSchema>;
 export type KnowledgeDocumentSummaryContract = z.infer<typeof knowledgeDocumentSummarySchema>;
 export type KnowledgeLibraryState = z.infer<typeof knowledgeLibraryStateSchema>;
 export type KnowledgeIngestedFile = z.infer<typeof knowledgeIngestedFileSchema>;
+export type KnowledgeSearchResultContract = z.infer<typeof knowledgeSearchResultSchema>;

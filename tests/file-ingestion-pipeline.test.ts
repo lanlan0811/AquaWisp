@@ -67,6 +67,9 @@ describe("M4 file ingestion acceptance", () => {
           uri: pathToFileURL(path).href,
           title: `${fixture.format.toUpperCase()} 样例`,
           ordinal: 0,
+          sourceType: "file",
+          tags: ["验收"],
+          updatedAt: "2026-09-02T00:00:00.000Z",
         });
         expect(results[0]?.highlights[0]?.text).toBe(fixture.key);
       }

@@ -5,6 +5,7 @@ import {
   createDesktopMarkup,
   desktopRendererScript,
   desktopStyles,
+  sourceStyles,
 } from "@aquawisp/desktop";
 import { describe, expect, it } from "vitest";
 
@@ -37,6 +38,10 @@ describe("M5 design-system desktop renderer", () => {
     expect(markup).toContain("data-knowledge-remove-dialog");
     expect(markup).toContain("data-approval-dialog");
     expect(markup).toContain("data-approval-remember");
+    expect(markup).toContain('data-right-tab="sources"');
+    expect(markup).toContain("data-source-list");
+    expect(markup).toContain("data-source-detail-content");
+    expect(markup).toContain("让沧渡检索知识库后，命中内容会显示在这里");
     expect(markup).toContain("本会话内，相同操作、目标和影响范围总是允许");
     expect(markup).toContain('name="reasoningLevel"');
     expect(markup).toContain('type="password"');
@@ -51,6 +56,12 @@ describe("M5 design-system desktop renderer", () => {
     expect(desktopRendererScript).toContain("api.knowledge.remove");
     expect(desktopRendererScript).toContain("api.approvals.resolve");
     expect(desktopRendererScript).toContain('runEvent.type === "approval.required"');
+    expect(desktopRendererScript).toContain('runEvent.type === "action.planned"');
+    expect(desktopRendererScript).toContain('runEvent.type === "action.observed"');
+    expect(desktopRendererScript).toContain('action?.toolName === "kb.search"');
+    expect(desktopRendererScript).toContain("sourceList.replaceChildren");
+    expect(desktopRendererScript).not.toContain("sourceList.innerHTML");
+    expect(desktopRendererScript).toContain("sourceDetailContent.textContent = source.content");
     expect(desktopRendererScript).toContain('approvalDialog?.addEventListener("cancel"');
     expect(desktopRendererScript).toContain("knowledgeList.replaceChildren");
     expect(desktopRendererScript).not.toContain("knowledgeList.innerHTML");
@@ -73,6 +84,6 @@ describe("M5 design-system desktop renderer", () => {
     expect(desktopStyles).toContain("width:220px");
     expect(desktopStyles).toContain("border-radius:12px");
     expect(desktopStyles).toContain("--send:#34b3a0");
-    expect(desktopStyles).toContain("width:280px");
+    expect(sourceStyles).toContain("width:280px");
   });
 });

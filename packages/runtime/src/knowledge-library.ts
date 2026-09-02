@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import {
   knowledgeIngestedFileSchema,
   knowledgeLibraryStateSchema,
+  knowledgeSearchResultSchema,
   type KnowledgeIngestedFile,
   type KnowledgeLibraryState,
 } from "@aquawisp/contracts";
@@ -87,7 +88,10 @@ export class RuntimeKnowledgeLibrary {
   }
 
   search(query: string, limit: number): readonly KnowledgeSearchResult[] {
-    return this.#knowledgeBase.search(query, limit);
+    return knowledgeSearchResultSchema
+      .array()
+      .max(limit)
+      .parse(this.#knowledgeBase.search(query, limit));
   }
 
   list(limit: number): readonly KnowledgeDocumentSummary[] {

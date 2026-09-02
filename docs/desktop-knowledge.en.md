@@ -8,4 +8,4 @@ The view shows source and chunk totals, source titles, timestamps, file URIs, an
 
 Removing a source requires an explicit confirmation dialog. It deletes only the local knowledge record and chunk index, never the original file. Renderer redraws from the authoritative state returned by runtime instead of predicting database state.
 
-This interface currently covers source management and full-text chunk indexing. Provider-backed semantic embeddings, in-conversation source cards, and Agent action approvals remain later M5 integration work and will continue through runtime and event contracts.
+This interface covers source management and full-text chunk indexing. In-conversation retrieval hits now link to the [Sources panel](desktop-sources.en.md) through action-ledger events. Provider-backed semantic embeddings remain a later runtime configuration integration.

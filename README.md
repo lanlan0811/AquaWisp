@@ -83,6 +83,7 @@ API key 的系统加密与 renderer 权限边界见 [密钥存储与 IPC 边界]
 模型、协议、思考强度、模式持久化和设置页行为见 [桌面端设置与密钥边界](docs/desktop-settings.md)。
 真实模型流式对话、停止操作和进程间数据边界见 [桌面端流式对话](docs/desktop-conversation.md)。
 本地文件选择、来源列表、分段统计与安全移除见 [桌面端知识库管理](docs/desktop-knowledge.md)。
+会话内引用、右侧来源卡和只读片段详情见 [桌面端来源联动](docs/desktop-sources.md)。
 高风险动作确认、拒绝语义与会话内精确授权见 [桌面端审批与会话授权](docs/desktop-approvals.md)。
 模型工具声明、输入校验、模式权限和执行资源上限见 [工具注册表与权限求值](docs/tool-policy.md)。
 内嵌 webview 与 CDP 的安全边界见 [可视浏览器宿主](docs/browser-host.md)。

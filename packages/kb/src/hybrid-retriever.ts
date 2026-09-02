@@ -38,6 +38,9 @@ export interface HybridSearchResult {
     readonly uri: string;
     readonly title: string;
     readonly ordinal: number;
+    readonly sourceType: "file" | "web" | "manual";
+    readonly tags: readonly string[];
+    readonly updatedAt: string;
   };
   readonly highlights: readonly KnowledgeHighlight[];
 }
@@ -126,6 +129,9 @@ export class HybridKnowledgeIndex {
         uri: value.uri,
         title: value.title,
         ordinal: value.ordinal,
+        sourceType: value.sourceType,
+        tags: value.tags,
+        updatedAt: value.updatedAt,
       },
       highlights: createHighlights(query, value.content),
     }));
@@ -149,6 +155,9 @@ export class HybridKnowledgeIndex {
               ordinal: chunk.ordinal,
               uri: chunk.uri,
               title: chunk.title,
+              sourceType: chunk.sourceType,
+              tags: chunk.tags,
+              updatedAt: chunk.updatedAt,
               content: chunk.content,
               score,
             };

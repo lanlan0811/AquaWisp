@@ -55,7 +55,14 @@ describe("M4 hybrid knowledge retrieval", () => {
     expect(results.map(({ source }) => source.documentId)).toEqual(["concept", "literal"]);
     expect(results[0]).toMatchObject({
       matchedBy: ["semantic"],
-      source: { uri: "manual:///concept", title: "语义来源", ordinal: 0 },
+      source: {
+        uri: "manual:///concept",
+        title: "语义来源",
+        ordinal: 0,
+        sourceType: "manual",
+        tags: [],
+        updatedAt: "2026-09-02T00:01:00.000Z",
+      },
     });
     expect(results[1]).toMatchObject({
       matchedBy: ["full_text"],

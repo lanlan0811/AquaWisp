@@ -18,14 +18,18 @@ export function createDesktopDocument(state: DesktopViewState, scriptNonce: stri
   if (!/^[A-Za-z0-9+/=]{16,128}$/u.test(scriptNonce)) {
     throw new Error("Desktop script nonce must be a non-empty base64 value");
   }
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${scriptNonce}'"><title>沧渡 AquaWisp</title><style>${desktopStyles}${knowledgeStyles}${approvalStyles}</style></head><body>${createDesktopMarkup(state)}<script nonce="${scriptNonce}">${desktopRendererScript}</script></body></html>`;
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${scriptNonce}'"><title>沧渡 AquaWisp</title><style>${desktopStyles}${knowledgeStyles}${sourceStyles}${approvalStyles}</style></head><body>${createDesktopMarkup(state)}<script nonce="${scriptNonce}">${desktopRendererScript}</script></body></html>`;
 }
 export function createDesktopMarkup(state: DesktopViewState): string {
   const label = { plan: "计划", work: "工作", full_access: "完全访问" }[state.mode];
   const runtimeLabel = state.runtimeStatus === "connected" ? "运行时已连接" : "运行时未连接";
-  const browserPanel = state.browserVisible
-    ? `<aside class="browser-panel"><header>${icon("browser")}可视浏览器</header><div class="browser-address"><input aria-label="浏览器地址" value="about:blank" readonly></div><webview src="about:blank"></webview></aside>`
+  const browserTab = state.browserVisible
+    ? `<button class="right-tab" data-right-tab="browser">${icon("browser")}<span>浏览器</span></button>`
     : "";
+  const browserBody = state.browserVisible
+    ? `<section class="right-body browser-body" data-right-body="browser" hidden><div class="browser-address"><input aria-label="浏览器地址" value="about:blank" readonly></div><webview src="about:blank"></webview></section>`
+    : "";
+  const rightPanel = `<aside class="right-panel"><div class="right-tabs"><button class="right-tab active" data-right-tab="sources">${icon("source")}<span>来源</span><small data-source-count>0</small></button>${browserTab}<button class="right-tab" data-right-tab="artifacts">${icon("artifact")}<span>工件</span></button></div><section class="right-body source-body" data-right-body="sources"><p class="right-section-title">检索来源</p><div class="source-list" data-source-list></div><div class="right-empty" data-source-empty>${icon("source")}<p>让沧渡检索知识库后，命中内容会显示在这里。</p></div></section>${browserBody}<section class="right-body" data-right-body="artifacts" hidden><div class="right-empty">${icon("artifact")}<p>运行产生的工件会显示在这里。</p></div></section><template data-source-icon="file">${icon("file")}</template><template data-source-icon="web">${icon("web")}</template><template data-source-icon="manual">${icon("manual")}</template></aside>`;
   const providers = builtInModelCatalog.providers
     .map(
       (provider) =>
@@ -38,10 +42,11 @@ export function createDesktopMarkup(state: DesktopViewState): string {
         `<option value="${escapeHtml(model.id)}" data-provider="${escapeHtml(model.providerId)}" data-protocols="${escapeHtml(model.supportedProtocols.join(","))}" data-levels="${escapeHtml(model.reasoning.levels.map(({ id }) => id).join(","))}"${model.id === state.modelId ? " selected" : ""}>${escapeHtml(model.name)}</option>`,
     )
     .join("");
-  return `<main class="app-shell"><aside class="sidebar"><button class="new-session" data-new-session>${icon("plus")}新建会话</button><nav><button class="nav active" data-view="conversation">${icon("chat")}会话</button><button class="nav" data-view="knowledge">${icon("library")}知识库</button><button class="nav" data-view="settings">${icon("settings")}设置</button></nav><footer><span data-mode-label>${label}</span> · <span data-runtime-label>${runtimeLabel}</span></footer></aside><section class="workspace"><section class="conversation" data-view-panel="conversation"><header>${escapeHtml(state.workspaceName)}<span data-model-label>${escapeHtml(state.modelName)}</span></header><section class="message-list" data-conversation-messages aria-live="polite"><article class="assistant-message"><b>沧</b><p>你好，我是沧渡。你可以让我采集资料、整理知识库或生成文档。</p></article></section><section class="input-card"><textarea data-conversation-input placeholder="帮你采集资料、整理知识库、生成文档报告……"></textarea><button class="send" data-conversation-send data-running="${state.running ? "true" : "false"}" aria-label="${state.running ? "停止" : "发送"}"><span data-send-icon${state.running ? " hidden" : ""}>${icon("send")}</span><span data-stop-icon${state.running ? "" : " hidden"}>${icon("stop")}</span></button></section></section><section class="knowledge-view" data-view-panel="knowledge" hidden><header><h1>知识库</h1><button class="secondary" data-knowledge-add>${icon("plus")}添加文件</button></header><div class="knowledge-summary" aria-live="polite"><div><strong data-knowledge-documents>—</strong><span>个来源</span></div><div><strong data-knowledge-chunks>—</strong><span>个分段</span></div><p data-knowledge-status>打开知识库时自动读取本地索引。</p></div><section class="knowledge-list" data-knowledge-list></section><div class="empty-state" data-knowledge-empty>${icon("library")}<h2>知识库为空</h2><p>添加 Markdown、PDF 或 Office 文档，沧渡会在本地提取并建立分段索引。</p></div><dialog class="knowledge-dialog" data-knowledge-remove-dialog><form method="dialog"><h2>确认移除来源</h2><p>将从本地知识库删除“<strong data-knowledge-remove-title></strong>”及其分段索引，原文件不会被删除。</p><menu><button value="cancel">取消</button><button value="confirm">确认移除</button></menu></form></dialog></section><section class="settings-view" data-view-panel="settings" hidden><header><h1>设置</h1></header><form data-settings-form data-secret-name="${escapeHtml(state.secretName)}"><label>模型供应商<select name="providerId">${providers}</select></label><label>默认模型<select name="modelId">${models}</select></label><label>API 协议<select name="protocol"><option value="chat_completions"${state.protocol === "chat_completions" ? " selected" : ""}>Chat Completions</option><option value="responses"${state.protocol === "responses" ? " selected" : ""}>Responses</option></select></label><label>默认思考强度<select name="reasoningLevel"><option value="${escapeHtml(state.reasoningLevel)}">${escapeHtml(state.reasoningLevel)}</option></select></label><label>API Key<input name="apiKey" type="password" autocomplete="new-password" placeholder="已加密保存的 key 不会回显"></label><label>执行模式<select name="mode"><option value="plan"${state.mode === "plan" ? " selected" : ""}>计划</option><option value="work"${state.mode === "work" ? " selected" : ""}>工作</option><option value="full_access"${state.mode === "full_access" ? " selected" : ""}>完全访问</option></select></label><div class="settings-actions"><span data-settings-status>尚未检查密钥</span><button class="primary" type="submit">保存设置</button></div></form></section></section>${browserPanel}<dialog class="approval-dialog" data-approval-dialog aria-labelledby="approval-title"><form method="dialog"><div class="approval-heading">${icon("warning")}<div><h2 id="approval-title">需要你的确认</h2><p>沧渡想要执行以下操作：</p></div></div><dl><div><dt>操作</dt><dd data-approval-action></dd></div><div><dt>目标</dt><dd data-approval-target></dd></div><div><dt>需要确认的原因</dt><dd data-approval-reason></dd></div><div><dt>可能影响</dt><dd data-approval-impact></dd></div></dl><label class="approval-remember"><input type="checkbox" data-approval-remember>本会话内，相同操作、目标和影响范围总是允许</label><p class="approval-error" data-approval-error aria-live="assertive"></p><menu><button class="approval-deny" value="deny">拒绝</button><button class="approval-approve" value="approve" data-approval-approve>仅此一次允许</button></menu></form></dialog></main>`;
+  return `<main class="app-shell"><aside class="sidebar"><button class="new-session" data-new-session>${icon("plus")}新建会话</button><nav><button class="nav active" data-view="conversation">${icon("chat")}会话</button><button class="nav" data-view="knowledge">${icon("library")}知识库</button><button class="nav" data-view="settings">${icon("settings")}设置</button></nav><footer><span data-mode-label>${label}</span> · <span data-runtime-label>${runtimeLabel}</span></footer></aside><section class="workspace"><section class="conversation" data-view-panel="conversation"><header>${escapeHtml(state.workspaceName)}<span data-model-label>${escapeHtml(state.modelName)}</span></header><section class="message-list" data-conversation-messages aria-live="polite"><article class="assistant-message"><b>沧</b><div class="message-body"><p>你好，我是沧渡。你可以让我采集资料、整理知识库或生成文档。</p></div></article></section><section class="input-card"><textarea data-conversation-input placeholder="帮你采集资料、整理知识库、生成文档报告……"></textarea><button class="send" data-conversation-send data-running="${state.running ? "true" : "false"}" aria-label="${state.running ? "停止" : "发送"}"><span data-send-icon${state.running ? " hidden" : ""}>${icon("send")}</span><span data-stop-icon${state.running ? "" : " hidden"}>${icon("stop")}</span></button></section></section><section class="knowledge-view" data-view-panel="knowledge" hidden><header><h1>知识库</h1><button class="secondary" data-knowledge-add>${icon("plus")}添加文件</button></header><div class="knowledge-summary" aria-live="polite"><div><strong data-knowledge-documents>—</strong><span>个来源</span></div><div><strong data-knowledge-chunks>—</strong><span>个分段</span></div><p data-knowledge-status>打开知识库时自动读取本地索引。</p></div><section class="knowledge-list" data-knowledge-list></section><div class="empty-state" data-knowledge-empty>${icon("library")}<h2>知识库为空</h2><p>添加 Markdown、PDF 或 Office 文档，沧渡会在本地提取并建立分段索引。</p></div><dialog class="knowledge-dialog" data-knowledge-remove-dialog><form method="dialog"><h2>确认移除来源</h2><p>将从本地知识库删除“<strong data-knowledge-remove-title></strong>”及其分段索引，原文件不会被删除。</p><menu><button value="cancel">取消</button><button value="confirm">确认移除</button></menu></form></dialog></section><section class="settings-view" data-view-panel="settings" hidden><header><h1>设置</h1></header><form data-settings-form data-secret-name="${escapeHtml(state.secretName)}"><label>模型供应商<select name="providerId">${providers}</select></label><label>默认模型<select name="modelId">${models}</select></label><label>API 协议<select name="protocol"><option value="chat_completions"${state.protocol === "chat_completions" ? " selected" : ""}>Chat Completions</option><option value="responses"${state.protocol === "responses" ? " selected" : ""}>Responses</option></select></label><label>默认思考强度<select name="reasoningLevel"><option value="${escapeHtml(state.reasoningLevel)}">${escapeHtml(state.reasoningLevel)}</option></select></label><label>API Key<input name="apiKey" type="password" autocomplete="new-password" placeholder="已加密保存的 key 不会回显"></label><label>执行模式<select name="mode"><option value="plan"${state.mode === "plan" ? " selected" : ""}>计划</option><option value="work"${state.mode === "work" ? " selected" : ""}>工作</option><option value="full_access"${state.mode === "full_access" ? " selected" : ""}>完全访问</option></select></label><div class="settings-actions"><span data-settings-status>尚未检查密钥</span><button class="primary" type="submit">保存设置</button></div></form></section></section>${rightPanel}<dialog class="source-dialog" data-source-dialog aria-labelledby="source-detail-title"><form method="dialog"><header><div><span>知识库来源</span><h2 id="source-detail-title" data-source-detail-title></h2></div><button value="close" aria-label="关闭来源详情">${icon("close")}</button></header><dl><div><dt>类型</dt><dd data-source-detail-type></dd></div><div><dt>分段</dt><dd data-source-detail-ordinal></dd></div><div><dt>入库时间</dt><dd data-source-detail-time></dd></div><div><dt>标签</dt><dd data-source-detail-tags></dd></div><div><dt>URI</dt><dd data-source-detail-uri></dd></div></dl><p data-source-detail-content></p></form></dialog><dialog class="approval-dialog" data-approval-dialog aria-labelledby="approval-title"><form method="dialog"><div class="approval-heading">${icon("warning")}<div><h2 id="approval-title">需要你的确认</h2><p>沧渡想要执行以下操作：</p></div></div><dl><div><dt>操作</dt><dd data-approval-action></dd></div><div><dt>目标</dt><dd data-approval-target></dd></div><div><dt>需要确认的原因</dt><dd data-approval-reason></dd></div><div><dt>可能影响</dt><dd data-approval-impact></dd></div></dl><label class="approval-remember"><input type="checkbox" data-approval-remember>本会话内，相同操作、目标和影响范围总是允许</label><p class="approval-error" data-approval-error aria-live="assertive"></p><menu><button class="approval-deny" value="deny">拒绝</button><button class="approval-approve" value="approve" data-approval-approve>仅此一次允许</button></menu></form></dialog></main>`;
 }
-export const desktopStyles = `:root{--brand:#0e7490;--send:#34b3a0;--side:#f7f7f8;--border:#e8e8ea;--text:#1f2933;--weak:#5f6b76;--danger:#b91c1c;--surface:#fff;font-family:system-ui,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}body{margin:0;color:var(--text)}[hidden]{display:none!important}button,select,input,textarea{font:inherit}.app-shell{display:flex;min-height:100vh}.sidebar{box-sizing:border-box;width:220px;flex:none;background:var(--side);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column}.new-session,.send,.primary{border:0;border-radius:6px;color:#fff}.new-session{background:var(--brand);padding:8px 16px;font-weight:600}.sidebar nav{display:grid;gap:6px;margin-top:16px}.nav{display:flex;gap:8px;border:0;background:transparent;padding:10px;text-align:left}.nav.active{border-left:3px solid var(--brand);color:var(--brand)}footer{margin-top:auto;font-size:12px}.workspace{flex:1;min-width:0}.conversation,.knowledge-view,.settings-view{height:100vh;box-sizing:border-box;overflow:auto}.conversation{display:flex;flex-direction:column}.conversation header,.knowledge-view header,.settings-view header{height:44px;box-sizing:border-box;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;align-items:center}.knowledge-view h1,.settings-view h1{font-size:16px;margin:0}.message-list{flex:1;overflow:auto;padding:0 24px}.assistant-message,.user-message{display:flex;gap:8px;max-width:860px;margin:24px auto}.assistant-message b,.user-message b{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--brand);color:#fff}.assistant-message p,.user-message p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:12px 16px;border:1px solid var(--border);border-radius:4px 16px 16px}.user-message{flex-direction:row-reverse}.user-message b{background:#475467}.user-message p{background:#ecfdf8;border-color:#c6eee5;border-radius:16px 4px 16px 16px}.input-card{box-sizing:border-box;width:min(800px,calc(100% - 48px));margin:12px auto 24px;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex}.input-card:focus-within{border-color:var(--brand);box-shadow:0 2px 16px rgba(14,116,144,.12)}textarea{flex:1;border:0;min-height:80px;resize:vertical;outline:0}.send{width:36px;height:36px;background:var(--send);display:grid;place-items:center}.send[data-running=true]{background:#b42318}.send span{display:grid;place-items:center}.empty-state{max-width:520px;margin:18vh auto;text-align:center;color:#667085}.empty-state>svg{width:42px;height:42px}.settings-view form{max-width:680px;margin:28px auto;display:grid;gap:18px}.settings-view label{display:grid;gap:7px;font-weight:600}.settings-view select,.settings-view input{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fff}.settings-actions{display:flex;align-items:center;justify-content:space-between;color:#667085}.primary{background:var(--brand);padding:9px 16px;font-weight:600}.secondary{border:1px solid var(--border);border-radius:6px;background:#fff;padding:7px 12px;display:flex;gap:6px}.browser-panel{width:280px;flex:none;border-left:1px solid var(--border);display:flex;flex-direction:column}.browser-panel header{height:44px;padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);font-weight:600}.browser-address{padding:8px;border-bottom:1px solid var(--border)}.browser-address input{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 8px}.browser-panel webview{flex:1;min-height:480px}svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}`;
+export const desktopStyles = `:root{--brand:#0e7490;--brand-weak:#e0f2f7;--send:#34b3a0;--side:#f7f7f8;--border:#e8e8ea;--text:#1f2933;--weak:#5f6b76;--danger:#b91c1c;--surface:#fff;font-family:system-ui,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}body{margin:0;color:var(--text)}[hidden]{display:none!important}button,select,input,textarea{font:inherit}.app-shell{display:flex;min-height:100vh}.sidebar{box-sizing:border-box;width:220px;flex:none;background:var(--side);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column}.new-session,.send,.primary{border:0;border-radius:6px;color:#fff}.new-session{background:var(--brand);padding:8px 16px;font-weight:600}.sidebar nav{display:grid;gap:6px;margin-top:16px}.nav{display:flex;gap:8px;border:0;background:transparent;padding:10px;text-align:left}.nav.active{border-left:3px solid var(--brand);color:var(--brand)}footer{margin-top:auto;font-size:12px}.workspace{flex:1;min-width:0}.conversation,.knowledge-view,.settings-view{height:100vh;box-sizing:border-box;overflow:auto}.conversation{display:flex;flex-direction:column}.conversation header,.knowledge-view header,.settings-view header{height:44px;box-sizing:border-box;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;justify-content:space-between;align-items:center}.knowledge-view h1,.settings-view h1{font-size:16px;margin:0}.message-list{flex:1;overflow:auto;padding:0 24px}.assistant-message,.user-message{display:flex;gap:8px;max-width:860px;margin:24px auto}.assistant-message b,.user-message b{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--brand);color:#fff}.message-body{min-width:0}.assistant-message p,.user-message p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:12px 16px;border:1px solid var(--border);border-radius:4px 16px 16px}.user-message{flex-direction:row-reverse}.user-message b{background:#475467}.user-message p{background:#ecfdf8;border-color:#c6eee5;border-radius:16px 4px 16px 16px}.input-card{box-sizing:border-box;width:min(800px,calc(100% - 48px));margin:12px auto 24px;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex}.input-card:focus-within{border-color:var(--brand);box-shadow:0 2px 16px rgba(14,116,144,.12)}textarea{flex:1;border:0;min-height:80px;resize:vertical;outline:0}.send{width:36px;height:36px;background:var(--send);display:grid;place-items:center}.send[data-running=true]{background:#b42318}.send span{display:grid;place-items:center}.empty-state{max-width:520px;margin:18vh auto;text-align:center;color:#667085}.empty-state>svg{width:42px;height:42px}.settings-view form{max-width:680px;margin:28px auto;display:grid;gap:18px}.settings-view label{display:grid;gap:7px;font-weight:600}.settings-view select,.settings-view input{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fff}.settings-actions{display:flex;align-items:center;justify-content:space-between;color:#667085}.primary{background:var(--brand);padding:9px 16px;font-weight:600}.secondary{border:1px solid var(--border);border-radius:6px;background:#fff;padding:7px 12px;display:flex;gap:6px}svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}`;
 const knowledgeStyles = `.knowledge-summary{box-sizing:border-box;max-width:860px;margin:24px auto 12px;padding:16px;display:flex;align-items:center;gap:24px;border:1px solid var(--border);border-radius:12px;background:var(--side)}.knowledge-summary div{display:grid;min-width:84px}.knowledge-summary strong{font-size:20px;color:var(--brand)}.knowledge-summary span,.knowledge-summary p{font-size:12px;color:var(--weak)}.knowledge-summary p{margin:0 0 0 auto}.knowledge-list{box-sizing:border-box;max-width:860px;margin:0 auto 24px;display:grid;gap:12px}.knowledge-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;padding:16px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}.knowledge-card h2{margin:0;font-size:14px;font-weight:600;overflow-wrap:anywhere}.knowledge-card-meta{margin:0;color:var(--weak);font-size:12px}.knowledge-card-uri{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--weak);font-size:12px}.knowledge-card .remove-source{grid-column:2;grid-row:1/4;align-self:center;border:1px solid var(--danger);border-radius:6px;background:transparent;color:var(--danger);padding:7px 12px}.knowledge-card .remove-source:hover{background:var(--danger);color:#fff}.knowledge-view .empty-state{margin-top:12vh}.knowledge-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(440px,calc(100% - 32px));border:1px solid var(--danger);border-radius:12px;padding:24px;color:var(--text)}.knowledge-dialog::backdrop{background:rgba(0,0,0,.4)}.knowledge-dialog h2{margin:0 0 8px;font-size:20px}.knowledge-dialog p{margin:0 0 16px;line-height:1.6}.knowledge-dialog menu{display:flex;justify-content:flex-end;gap:12px;margin:0;padding:0}.knowledge-dialog button{border-radius:6px;padding:8px 16px}.knowledge-dialog [value=cancel]{border:1px solid var(--border);background:var(--surface)}.knowledge-dialog [value=confirm]{border:0;background:var(--danger);color:#fff}@media(max-width:1080px){.knowledge-summary,.knowledge-list{margin-left:24px;margin-right:24px}.knowledge-summary{align-items:flex-start;flex-wrap:wrap}.knowledge-summary p{flex-basis:100%;margin:0}}`;
+export const sourceStyles = `.right-panel{box-sizing:border-box;width:280px;height:100vh;flex:none;border-left:1px solid var(--border);background:var(--side);display:flex;flex-direction:column}.right-tabs{height:44px;box-sizing:border-box;border-bottom:1px solid var(--border);display:flex}.right-tab{position:relative;min-width:0;flex:1;border:0;background:transparent;color:var(--weak);display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px}.right-tab.active{color:var(--brand);font-weight:600}.right-tab.active::after{content:"";position:absolute;inset:auto 10px 0;height:2px;background:var(--brand)}.right-tab small{min-width:16px;border-radius:9999px;background:var(--border);font-size:10px}.right-body{min-height:0;flex:1;overflow:auto}.right-section-title{margin:12px 12px 8px;color:var(--weak);font-size:12px}.right-empty{box-sizing:border-box;padding:64px 20px;text-align:center;color:var(--weak);font-size:12px;line-height:1.6}.right-empty svg{width:28px;height:28px}.source-list{display:grid;gap:8px;padding:0 8px 12px}.source-card{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:10px;text-align:left;display:grid;grid-template-columns:20px minmax(0,1fr);gap:5px 8px;color:var(--text)}.source-card:hover,.source-card:focus-visible{border-color:var(--brand)}.source-card>svg{grid-row:1/4;color:var(--brand)}.source-card strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.source-card small{color:var(--weak)}.source-card .source-preview{grid-column:2;margin:0;display:-webkit-box;overflow:hidden;-webkit-line-clamp:3;-webkit-box-orient:vertical;color:var(--weak);font-size:12px;line-height:1.5}.source-card mark{background:var(--brand-weak);color:inherit}.message-sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.message-source{border:0;border-radius:9999px;background:var(--side);color:var(--brand);padding:4px 8px;font-size:12px;display:flex;align-items:center;gap:4px}.message-source svg{width:14px;height:14px}.browser-body{display:flex;flex-direction:column}.browser-address{padding:8px;border-bottom:1px solid var(--border)}.browser-address input{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 8px}.browser-body webview{flex:1;min-height:480px}.source-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(680px,calc(100% - 32px));max-height:calc(100vh - 32px);overflow:auto;border:1px solid var(--border);border-radius:12px;padding:24px;background:var(--surface);color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.12)}.source-dialog::backdrop{background:rgba(0,0,0,.4)}.source-dialog header{display:flex;justify-content:space-between;gap:16px}.source-dialog header span{color:var(--weak);font-size:12px}.source-dialog h2{margin:4px 0 0;font-size:20px}.source-dialog header button{width:32px;height:32px;border:0;border-radius:6px;background:transparent}.source-dialog dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 20px;margin:20px 0;padding:16px;border:1px solid var(--border);border-radius:6px}.source-dialog dl div{min-width:0}.source-dialog dt{color:var(--weak);font-size:12px}.source-dialog dd{margin:4px 0 0;overflow-wrap:anywhere;font-size:13px}.source-dialog [data-source-detail-uri]{font-family:ui-monospace,Consolas,"Cascadia Mono",monospace}.source-dialog>form>p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}@media(max-width:1080px){.right-panel{width:240px}}`;
 const approvalStyles = `.approval-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(480px,calc(100% - 32px));max-height:calc(100vh - 32px);overflow:auto;border:1px solid var(--danger);border-radius:12px;padding:24px;background:var(--surface);color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.12)}.approval-dialog::backdrop{background:rgba(0,0,0,.4)}.approval-heading{display:flex;align-items:flex-start;gap:12px}.approval-heading>svg{width:40px;height:40px;flex:none;color:var(--danger)}.approval-heading h2{margin:0;font-size:20px}.approval-heading p{margin:4px 0 0;color:var(--weak)}.approval-dialog dl{display:grid;gap:8px;margin:16px 0;padding:16px;border:1px solid var(--border);border-radius:6px;background:var(--side)}.approval-dialog dl div{display:grid;grid-template-columns:112px minmax(0,1fr);gap:8px}.approval-dialog dt{color:var(--weak)}.approval-dialog dd{margin:0;overflow-wrap:anywhere}.approval-remember{display:flex;align-items:flex-start;gap:8px;line-height:1.5}.approval-remember input{width:16px;height:16px;margin-top:3px;accent-color:var(--brand);flex:none}.approval-error{min-height:20px;margin:8px 0 0;color:var(--danger);font-size:12px}.approval-dialog menu{display:flex;justify-content:flex-end;gap:12px;margin:8px 0 0;padding:0}.approval-dialog button{border-radius:6px;padding:8px 16px;font-weight:600}.approval-deny{border:1px solid var(--danger);background:transparent;color:var(--danger)}.approval-deny:hover{background:var(--danger);color:#fff}.approval-approve{border:0;background:var(--brand);color:#fff}.approval-dialog button:focus-visible,.approval-remember input:focus-visible{outline:2px solid var(--brand);outline-offset:2px}`;
 export const desktopRendererScript = `(() => {
   const api = window.aquawisp;
@@ -75,7 +80,19 @@ export const desktopRendererScript = `(() => {
   const approvalRemember = document.querySelector("[data-approval-remember]");
   const approvalApprove = document.querySelector("[data-approval-approve]");
   const approvalError = document.querySelector("[data-approval-error]");
+  const sourceList = document.querySelector("[data-source-list]");
+  const sourceEmpty = document.querySelector("[data-source-empty]");
+  const sourceCount = document.querySelector("[data-source-count]");
+  const sourceDialog = document.querySelector("[data-source-dialog]");
+  const sourceDetailTitle = document.querySelector("[data-source-detail-title]");
+  const sourceDetailType = document.querySelector("[data-source-detail-type]");
+  const sourceDetailOrdinal = document.querySelector("[data-source-detail-ordinal]");
+  const sourceDetailTime = document.querySelector("[data-source-detail-time]");
+  const sourceDetailTags = document.querySelector("[data-source-detail-tags]");
+  const sourceDetailUri = document.querySelector("[data-source-detail-uri]");
+  const sourceDetailContent = document.querySelector("[data-source-detail-content]");
   const modeLabels = { plan: "计划", work: "工作", full_access: "完全访问" };
+  const sourceTypeLabels = { file: "本地文件", web: "网页", manual: "手动资料" };
   let sessionId = "session-" + crypto.randomUUID();
   let activeRunId;
   let activeAssistant;
@@ -84,6 +101,8 @@ export const desktopRendererScript = `(() => {
   let knowledgeLoaded = false;
   let pendingKnowledgeRemoval;
   let activeApproval;
+  const actionDetails = new Map();
+  const sources = new Map();
   const appendMessage = (role, content) => {
     if (!(messages instanceof HTMLElement)) return undefined;
     const article = document.createElement("article");
@@ -92,7 +111,10 @@ export const desktopRendererScript = `(() => {
     avatar.textContent = role === "user" ? "你" : "沧";
     const paragraph = document.createElement("p");
     paragraph.textContent = content;
-    article.append(avatar, paragraph);
+    const body = document.createElement("div");
+    body.className = "message-body";
+    body.append(paragraph);
+    article.append(avatar, body);
     messages.append(article);
     messages.scrollTop = messages.scrollHeight;
     return paragraph;
@@ -126,11 +148,95 @@ export const desktopRendererScript = `(() => {
     if (approvalError) approvalError.textContent = "";
     if (approvalDialog instanceof HTMLDialogElement && !approvalDialog.open) approvalDialog.showModal();
   };
+  const isSource = (value) => {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+    return typeof value.chunkId === "string" && typeof value.documentId === "string" && Number.isInteger(value.ordinal) && value.ordinal >= 0 && typeof value.uri === "string" && typeof value.title === "string" && (value.sourceType === "file" || value.sourceType === "web" || value.sourceType === "manual") && Array.isArray(value.tags) && value.tags.every((tag) => typeof tag === "string") && typeof value.updatedAt === "string" && typeof value.content === "string" && typeof value.score === "number" && Number.isFinite(value.score);
+  };
+  const sourceIcon = (sourceType) => {
+    const template = document.querySelector('[data-source-icon="' + sourceType + '"]');
+    return template instanceof HTMLTemplateElement ? template.content.cloneNode(true) : document.createTextNode("");
+  };
+  const appendHighlighted = (container, content, query) => {
+    const normalizedQuery = typeof query === "string" ? query.trim() : "";
+    const start = normalizedQuery === "" ? -1 : content.toLocaleLowerCase().indexOf(normalizedQuery.toLocaleLowerCase());
+    if (start < 0) {
+      container.textContent = content;
+      return;
+    }
+    container.append(document.createTextNode(content.slice(0, start)));
+    const mark = document.createElement("mark");
+    mark.textContent = content.slice(start, start + normalizedQuery.length);
+    container.append(mark, document.createTextNode(content.slice(start + normalizedQuery.length)));
+  };
+  const openSource = (source) => {
+    if (sourceDetailTitle) sourceDetailTitle.textContent = source.title;
+    if (sourceDetailType) sourceDetailType.textContent = sourceTypeLabels[source.sourceType];
+    if (sourceDetailOrdinal) sourceDetailOrdinal.textContent = "第 " + String(source.ordinal + 1) + " 段";
+    if (sourceDetailTime) sourceDetailTime.textContent = new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(source.updatedAt));
+    if (sourceDetailTags) sourceDetailTags.textContent = source.tags.length > 0 ? source.tags.join("、") : "无";
+    if (sourceDetailUri) sourceDetailUri.textContent = source.uri;
+    if (sourceDetailContent) sourceDetailContent.textContent = source.content;
+    if (sourceDialog instanceof HTMLDialogElement && !sourceDialog.open) sourceDialog.showModal();
+  };
+  const createSourceCard = (source) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "source-card";
+    card.append(sourceIcon(source.sourceType));
+    const title = document.createElement("strong");
+    title.textContent = source.title;
+    const metadata = document.createElement("small");
+    metadata.textContent = sourceTypeLabels[source.sourceType] + " · 第 " + String(source.ordinal + 1) + " 段";
+    const preview = document.createElement("span");
+    preview.className = "source-preview";
+    appendHighlighted(preview, source.content, source.query);
+    card.append(title, metadata, preview);
+    card.addEventListener("click", () => openSource(source));
+    return card;
+  };
+  const renderSources = () => {
+    if (sourceCount) sourceCount.textContent = String(sources.size);
+    if (sourceEmpty instanceof HTMLElement) sourceEmpty.hidden = sources.size > 0;
+    if (sourceList instanceof HTMLElement) sourceList.replaceChildren(...Array.from(sources.values(), createSourceCard));
+  };
+  const attachMessageSource = (source) => {
+    if (!(activeAssistant instanceof HTMLParagraphElement)) return;
+    const body = activeAssistant.parentElement;
+    if (!(body instanceof HTMLElement)) return;
+    let container = body.querySelector(".message-sources");
+    if (!(container instanceof HTMLElement)) {
+      container = document.createElement("div");
+      container.className = "message-sources";
+      body.append(container);
+    }
+    if (Array.from(container.querySelectorAll("[data-source-chunk]")).some((item) => item.dataset.sourceChunk === source.chunkId)) return;
+    const citation = document.createElement("button");
+    citation.type = "button";
+    citation.className = "message-source";
+    citation.dataset.sourceChunk = source.chunkId;
+    citation.append(sourceIcon(source.sourceType));
+    const label = document.createElement("span");
+    label.textContent = source.title + " · " + String(source.ordinal + 1);
+    citation.append(label);
+    citation.addEventListener("click", () => openSource(source));
+    container.append(citation);
+  };
+  const collectSources = (observation, action) => {
+    if (!observation.ok || !Array.isArray(observation.output)) return;
+    for (const candidate of observation.output) {
+      if (!isSource(candidate)) continue;
+      const source = { ...candidate, query: action.query };
+      sources.set(source.chunkId, source);
+      attachMessageSource(source);
+    }
+    renderSources();
+  };
   const finishRun = () => {
     closeApproval();
     activeRunId = undefined;
     activeAssistant = undefined;
     cancellationRequested = false;
+    actionDetails.clear();
     setRunning(false);
   };
   api.conversation.onEvent((runEvent) => {
@@ -141,7 +247,13 @@ export const desktopRendererScript = `(() => {
       return;
     }
     if (!running || runEvent.runId !== activeRunId) return;
-    if (runEvent.type === "approval.required") {
+    if (runEvent.type === "action.planned") {
+      const action = runEvent.payload.action;
+      actionDetails.set(action.id, { toolName: action.toolName, query: typeof action.input.query === "string" ? action.input.query : "" });
+    } else if (runEvent.type === "action.observed") {
+      const action = actionDetails.get(runEvent.payload.actionId);
+      if (action?.toolName === "kb.search") collectSources(runEvent.payload.observation, action);
+    } else if (runEvent.type === "approval.required") {
       showApproval(runEvent.payload.request);
     } else if (runEvent.type === "model.delta") {
       if (!(activeAssistant instanceof HTMLParagraphElement)) activeAssistant = appendMessage("assistant", "");
@@ -240,6 +352,9 @@ export const desktopRendererScript = `(() => {
   newSessionButton?.addEventListener("click", () => {
     if (running || !(messages instanceof HTMLElement)) return;
     sessionId = "session-" + crypto.randomUUID();
+    actionDetails.clear();
+    sources.clear();
+    renderSources();
     messages.replaceChildren();
     appendMessage("assistant", "你好，我是沧渡。你可以让我采集资料、整理知识库或生成文档。");
     if (conversationInput instanceof HTMLTextAreaElement) conversationInput.focus();
@@ -335,6 +450,11 @@ export const desktopRendererScript = `(() => {
     if (name === "knowledge" && !knowledgeLoaded) void refreshKnowledge();
   };
   document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view)));
+  document.querySelectorAll("[data-right-tab]").forEach((button) => button.addEventListener("click", () => {
+    const name = button.dataset.rightTab;
+    document.querySelectorAll("[data-right-tab]").forEach((candidate) => candidate.classList.toggle("active", candidate === button));
+    document.querySelectorAll("[data-right-body]").forEach((body) => { body.hidden = body.dataset.rightBody !== name; });
+  }));
   const synchronizeModel = () => {
     if (!(provider instanceof HTMLSelectElement) || !(model instanceof HTMLSelectElement) || !(protocol instanceof HTMLSelectElement) || !(reasoning instanceof HTMLSelectElement)) return;
     for (const option of model.options) option.disabled = option.dataset.provider !== provider.value;
@@ -373,7 +493,21 @@ export const desktopRendererScript = `(() => {
   });
 })();`;
 function icon(
-  name: "plus" | "chat" | "library" | "settings" | "send" | "stop" | "browser" | "warning",
+  name:
+    | "plus"
+    | "chat"
+    | "library"
+    | "settings"
+    | "send"
+    | "stop"
+    | "browser"
+    | "warning"
+    | "source"
+    | "artifact"
+    | "file"
+    | "web"
+    | "manual"
+    | "close",
 ): string {
   const paths = {
     plus: "M12 5v14M5 12h14",
@@ -385,6 +519,12 @@ function icon(
     stop: "M7 7h10v10H7z",
     browser: "M3 5h18v14H3zM3 9h18M7 7h.01M10 7h.01",
     warning: "M12 3 2.8 20h18.4L12 3Zm0 6v5m0 3v.01",
+    source: "M5 3h11l3 3v15H5V3Zm11 0v4h4M8 11h8M8 15h8",
+    artifact: "M4 7l8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7M12 11v10",
+    file: "M6 3h8l4 4v14H6V3Zm8 0v5h5",
+    web: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 0c2.2 2.4 3.3 5.4 3.3 9S14.2 18.6 12 21c-2.2-2.4-3.3-5.4-3.3-9S9.8 5.4 12 3ZM3 12h18",
+    manual: "M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4",
+    close: "M6 6l12 12M18 6 6 18",
   };
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]}"/></svg>`;
 }
