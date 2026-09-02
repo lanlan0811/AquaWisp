@@ -5,6 +5,10 @@
   "streamRecovery": {
     "maximumAttempts": 1
   },
+  "knowledge": {
+    "databaseFileName": "kb.sqlite",
+    "listLimit": 500
+  },
   "context": {
     "checkpointDirectoryName": "context-checkpoints",
     "artifactDirectoryName": "context-artifacts",

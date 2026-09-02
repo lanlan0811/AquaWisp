@@ -21,6 +21,10 @@
     "maxSecretCharacters": 16384,
     "maxCiphertextBytes": 65536
   },
+  "knowledge": {
+    "maximumFilesPerImport": 32,
+    "maximumFailureMessageCharacters": 4096
+  },
   "settings": {
     "fileName": "settings.json",
     "defaultProviderId": "bigmodel",
@@ -39,6 +43,9 @@
     "settingsSet": "aquawisp:settings:set",
     "conversationStart": "aquawisp:conversation:start",
     "conversationCancel": "aquawisp:conversation:cancel",
-    "conversationEvent": "aquawisp:conversation:event"
+    "conversationEvent": "aquawisp:conversation:event",
+    "knowledgeList": "aquawisp:knowledge:list",
+    "knowledgeAddFiles": "aquawisp:knowledge:add-files",
+    "knowledgeRemove": "aquawisp:knowledge:remove"
   }
 }

@@ -47,6 +47,27 @@ export const runtimeRpcRequestSchema = z.discriminatedUnion("method", [
       params: z.object({ runId: entityIdSchema }).strict(),
     })
     .strict(),
+  z
+    .object({
+      ...runtimeRpcEnvelope,
+      method: z.literal("runtime.kb.state"),
+      params: z.object({}).strict(),
+    })
+    .strict(),
+  z
+    .object({
+      ...runtimeRpcEnvelope,
+      method: z.literal("runtime.kb.add_file"),
+      params: z.object({ path: z.string().min(1).max(32_768) }).strict(),
+    })
+    .strict(),
+  z
+    .object({
+      ...runtimeRpcEnvelope,
+      method: z.literal("runtime.kb.remove"),
+      params: z.object({ documentId: entityIdSchema }).strict(),
+    })
+    .strict(),
 ]);
 
 export const runtimeRpcResponseSchema = z.discriminatedUnion("ok", [

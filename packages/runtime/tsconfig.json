@@ -9,6 +9,7 @@
   "references": [
     { "path": "../context" },
     { "path": "../contracts" },
+    { "path": "../kb" },
     { "path": "../model" },
     { "path": "../models-catalog" }
   ]

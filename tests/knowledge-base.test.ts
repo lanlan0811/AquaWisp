@@ -36,6 +36,10 @@ describe("M4 knowledge base FTS", () => {
       expect.objectContaining({ id: "document-1", uri: "file://notes.md", tags: ["中文"] }),
     ]);
     expect(kb.search('" OR *', 10)).toEqual([]);
+    expect(kb.remove("document-1")).toBe(true);
+    expect(kb.remove("document-1")).toBe(false);
+    expect(kb.status()).toEqual({ documentCount: 0, chunkCount: 0 });
+    expect(kb.search("中文检索", 10)).toEqual([]);
     kb.close();
   });
 });

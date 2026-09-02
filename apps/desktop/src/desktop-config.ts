@@ -39,6 +39,12 @@ const desktopConfigSchema = z
         maxCiphertextBytes: z.number().int().positive().max(10_485_760),
       })
       .strict(),
+    knowledge: z
+      .object({
+        maximumFilesPerImport: z.number().int().positive().max(1_000),
+        maximumFailureMessageCharacters: z.number().int().positive().max(65_536),
+      })
+      .strict(),
     settings: z
       .object({
         fileName: z.string().min(1),
@@ -61,6 +67,9 @@ const desktopConfigSchema = z
         conversationStart: z.string().min(1),
         conversationCancel: z.string().min(1),
         conversationEvent: z.string().min(1),
+        knowledgeList: z.string().min(1),
+        knowledgeAddFiles: z.string().min(1),
+        knowledgeRemove: z.string().min(1),
       })
       .strict()
       .refine((channels) => {

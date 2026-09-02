@@ -204,6 +204,22 @@ export class KnowledgeBase {
       updatedAt: row.updated_at,
     }));
   }
+  remove(documentId: string): boolean {
+    if (documentId.trim() === "") throw new Error("Knowledge document ID cannot be empty");
+    return this.#transaction(() => {
+      const existing = this.#database
+        .prepare("SELECT 1 AS present FROM documents WHERE id = ?")
+        .get(documentId) as { present: number } | undefined;
+      if (existing === undefined) return false;
+      this.#database
+        .prepare(
+          "DELETE FROM chunks_fts WHERE chunk_id IN (SELECT id FROM chunks WHERE document_id = ?)",
+        )
+        .run(documentId);
+      this.#database.prepare("DELETE FROM documents WHERE id = ?").run(documentId);
+      return true;
+    });
+  }
   #transaction<T>(operation: () => T): T {
     this.#database.exec("BEGIN IMMEDIATE");
     try {

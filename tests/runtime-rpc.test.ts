@@ -2,12 +2,14 @@ import {
   runtimeRpcEventSchema,
   runtimeRpcRequestSchema,
   runtimeRpcResponseSchema,
+  knowledgeIngestedFileSchema,
+  knowledgeLibraryStateSchema,
   type RunEvent,
 } from "@aquawisp/contracts";
 import { RuntimeProcessClient } from "@aquawisp/desktop";
 import { DeterministicModel } from "@aquawisp/runtime";
 import { handleRuntimeRpcRequest, RuntimeRunService } from "@aquawisp/runtime/process-host";
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -186,6 +188,75 @@ describe("M5 runtime RPC", () => {
     }
   });
 
+  it("adds, lists, and removes knowledge files through the isolated runtime contract", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aquawisp-runtime-kb-"));
+    const sourcePath = join(directory, "项目说明.md");
+    await writeFile(sourcePath, "# 项目说明\n\n沧渡在本地管理知识来源和可追溯分段。", "utf8");
+    const service = new RuntimeRunService({
+      workingDirectory: directory,
+      onEvent: () => undefined,
+    });
+    try {
+      const emptyResponse = await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "rpc-kb-state-empty",
+          method: "runtime.kb.state",
+          params: {},
+        }),
+      );
+      if (!emptyResponse.ok) throw new Error(emptyResponse.error.message);
+      expect(knowledgeLibraryStateSchema.parse(emptyResponse.result)).toMatchObject({
+        status: { documentCount: 0, chunkCount: 0 },
+      });
+
+      const addResponse = await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "rpc-kb-add",
+          method: "runtime.kb.add_file",
+          params: { path: sourcePath },
+        }),
+      );
+      if (!addResponse.ok) throw new Error(addResponse.error.message);
+      const added = knowledgeIngestedFileSchema.parse(addResponse.result);
+      expect(added).toMatchObject({
+        format: "markdown",
+        document: { title: "项目说明.md", chunkCount: 1 },
+      });
+
+      const stateResponse = await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "rpc-kb-state-populated",
+          method: "runtime.kb.state",
+          params: {},
+        }),
+      );
+      if (!stateResponse.ok) throw new Error(stateResponse.error.message);
+      expect(knowledgeLibraryStateSchema.parse(stateResponse.result)).toMatchObject({
+        status: { documentCount: 1, chunkCount: 1 },
+        documents: [{ id: added.document.id, title: "项目说明.md", chunkCount: 1 }],
+      });
+
+      const removeResponse = await service.handle(
+        runtimeRpcRequestSchema.parse({
+          protocolVersion: 1,
+          requestId: "rpc-kb-remove",
+          method: "runtime.kb.remove",
+          params: { documentId: added.document.id },
+        }),
+      );
+      expect(removeResponse).toMatchObject({
+        ok: true,
+        result: { removed: true, state: { status: { documentCount: 0, chunkCount: 0 } } },
+      });
+    } finally {
+      service.close();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   it("spawns, calls, and gracefully shuts down an isolated runtime process", async () => {
     const directory = await mkdtemp(join(tmpdir(), "aquawisp-runtime-process-"));
     const client = new RuntimeProcessClient({
@@ -201,6 +272,11 @@ describe("M5 runtime RPC", () => {
       client.start();
       const response = await client.request("runtime.ping");
       expect(response).toMatchObject({ ok: true, result: { status: "ready" } });
+      const knowledge = await client.request({ method: "runtime.kb.state", params: {} });
+      expect(knowledge).toMatchObject({
+        ok: true,
+        result: { status: { documentCount: 0, chunkCount: 0 }, documents: [] },
+      });
       await client.close();
       expect(() => client.request("runtime.ping")).toThrow("not started");
     } finally {

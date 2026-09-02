@@ -32,6 +32,9 @@ describe("M5 design-system desktop renderer", () => {
     expect(markup).not.toMatch(/[😀-🙏]/u);
     expect(markup).toContain('<webview src="about:blank"></webview>');
     expect(markup).toContain('data-view-panel="settings"');
+    expect(markup).toContain("data-knowledge-add");
+    expect(markup).toContain("data-knowledge-list");
+    expect(markup).toContain("data-knowledge-remove-dialog");
     expect(markup).toContain('name="reasoningLevel"');
     expect(markup).toContain('type="password"');
     expect(markup).not.toContain("fixture-secret");
@@ -40,6 +43,11 @@ describe("M5 design-system desktop renderer", () => {
     expect(desktopRendererScript).toContain("api.conversation.start");
     expect(desktopRendererScript).toContain("api.conversation.cancel");
     expect(desktopRendererScript).toContain("api.conversation.onEvent");
+    expect(desktopRendererScript).toContain("api.knowledge.list");
+    expect(desktopRendererScript).toContain("api.knowledge.addFiles");
+    expect(desktopRendererScript).toContain("api.knowledge.remove");
+    expect(desktopRendererScript).toContain("knowledgeList.replaceChildren");
+    expect(desktopRendererScript).not.toContain("knowledgeList.innerHTML");
     expect(desktopRendererScript).toContain(
       "activeAssistant.textContent += runEvent.payload.delta",
     );

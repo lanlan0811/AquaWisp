@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { entityIdSchema } from "./common.js";
 import { runEventSchema } from "./events.js";
+import { knowledgeIngestedFileSchema, knowledgeLibraryStateSchema } from "./knowledge.js";
 import { runRecordSchema } from "./run.js";
 
 export const desktopSecretSetRequestSchema = z
@@ -28,6 +29,26 @@ export const desktopConversationCancelRequestSchema = z.object({ runId: entityId
 export const desktopConversationStartResultSchema = runRecordSchema;
 export const desktopConversationEventSchema = runEventSchema;
 
+export const desktopKnowledgeAddFilesResultSchema = z
+  .object({
+    cancelled: z.boolean(),
+    imported: z.array(knowledgeIngestedFileSchema),
+    failures: z.array(
+      z
+        .object({
+          fileName: z.string().min(1).max(1_024),
+          message: z.string().min(1).max(4_096),
+        })
+        .strict(),
+    ),
+    state: knowledgeLibraryStateSchema,
+  })
+  .strict();
+export const desktopKnowledgeRemoveRequestSchema = z
+  .object({ documentId: entityIdSchema })
+  .strict();
+export const desktopKnowledgeStateResultSchema = knowledgeLibraryStateSchema;
+
 export const desktopSettingsSchema = z
   .object({
     providerId: entityIdSchema,
@@ -42,3 +63,4 @@ export const desktopSettingsSchema = z
 export type DesktopSecretSetRequest = z.infer<typeof desktopSecretSetRequestSchema>;
 export type DesktopSecretNameRequest = z.infer<typeof desktopSecretNameRequestSchema>;
 export type DesktopSettings = z.infer<typeof desktopSettingsSchema>;
+export type DesktopKnowledgeAddFilesResult = z.infer<typeof desktopKnowledgeAddFilesResultSchema>;

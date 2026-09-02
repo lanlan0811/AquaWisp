@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -8,6 +8,9 @@ import {
   desktopConversationEventSchema,
   desktopConversationStartRequestSchema,
   desktopConversationStartResultSchema,
+  desktopKnowledgeAddFilesResultSchema,
+  desktopKnowledgeRemoveRequestSchema,
+  desktopKnowledgeStateResultSchema,
   desktopRuntimeStatusResultSchema,
   desktopSecretDeleteResultSchema,
   desktopSecretMutationResultSchema,
@@ -15,6 +18,7 @@ import {
   desktopSecretPresenceResultSchema,
   desktopSecretSetRequestSchema,
   desktopSettingsSchema,
+  knowledgeIngestedFileSchema,
   type DesktopSettings,
 } from "@aquawisp/contracts";
 import { browserPolicy, hardenWebviewPreferences, type BrowserTabPort } from "@aquawisp/browser";
@@ -22,6 +26,7 @@ import { getBuiltInModel } from "@aquawisp/models-catalog";
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   safeStorage,
   type BrowserWindow as BrowserWindowType,
@@ -269,6 +274,80 @@ function registerDesktopIpc(secretVault: SecretVault, settingsStore: DesktopSett
     if (!response.ok) throw new Error(response.error.message);
     return response.result;
   });
+  ipcMain.handle(desktopConfig.ipcChannels.knowledgeList, async (event) => {
+    assertAuthorizedRenderer(event);
+    return await requestKnowledgeState();
+  });
+  ipcMain.handle(desktopConfig.ipcChannels.knowledgeAddFiles, async (event) => {
+    assertAuthorizedRenderer(event);
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    if (owner === null) throw new Error("添加文件需要一个可用的桌面窗口");
+    const before = await requestKnowledgeState();
+    const selection = await dialog.showOpenDialog(owner, {
+      title: "添加知识库文件",
+      buttonLabel: "添加到知识库",
+      properties: ["openFile", "multiSelections"],
+      filters: [
+        {
+          name: "支持的文档",
+          extensions: before.acceptedExtensions.map((extension) => extension.slice(1)),
+        },
+      ],
+    });
+    if (selection.canceled) {
+      return desktopKnowledgeAddFilesResultSchema.parse({
+        cancelled: true,
+        imported: [],
+        failures: [],
+        state: before,
+      });
+    }
+    if (selection.filePaths.length > desktopConfig.knowledge.maximumFilesPerImport) {
+      throw new Error("选择的文件数量超过单次导入上限");
+    }
+    const imported = [];
+    const failures: { fileName: string; message: string }[] = [];
+    for (const filePath of selection.filePaths) {
+      try {
+        if (runtime === undefined) throw new Error("运行时未连接");
+        const response = await runtime.request({
+          method: "runtime.kb.add_file",
+          params: { path: filePath },
+        });
+        if (!response.ok) {
+          throw new Error("文件无法入库，请确认格式受支持、内容可读取且未超过资源限制");
+        }
+        imported.push(knowledgeIngestedFileSchema.parse(response.result));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "文件入库失败";
+        failures.push({
+          fileName: basename(filePath),
+          message: message.slice(0, desktopConfig.knowledge.maximumFailureMessageCharacters),
+        });
+      }
+    }
+    return desktopKnowledgeAddFilesResultSchema.parse({
+      cancelled: false,
+      imported,
+      failures,
+      state: await requestKnowledgeState(),
+    });
+  });
+  ipcMain.handle(desktopConfig.ipcChannels.knowledgeRemove, async (event, input: unknown) => {
+    assertAuthorizedRenderer(event);
+    if (runtime === undefined) throw new Error("运行时未连接");
+    const request = desktopKnowledgeRemoveRequestSchema.parse(input);
+    const response = await runtime.request({ method: "runtime.kb.remove", params: request });
+    if (!response.ok) throw new Error("无法移除知识库来源");
+    return desktopKnowledgeStateResultSchema.parse(response.result.state);
+  });
+}
+
+async function requestKnowledgeState() {
+  if (runtime === undefined) throw new Error("运行时未连接");
+  const response = await runtime.request({ method: "runtime.kb.state", params: {} });
+  if (!response.ok) throw new Error("无法读取知识库状态");
+  return desktopKnowledgeStateResultSchema.parse(response.result);
 }
 
 function assertAuthorizedRenderer(event: IpcMainInvokeEvent): void {

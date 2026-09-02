@@ -17,6 +17,7 @@ import { getBuiltInModel } from "@aquawisp/models-catalog";
 import { CatalogModelPort } from "./catalog-model-port.js";
 import { PersistentConversationContext } from "./conversation-context.js";
 import { SqliteEventStore } from "./event-store.js";
+import { RuntimeKnowledgeLibrary } from "./knowledge-library.js";
 import type { ModelPort } from "./ports.js";
 import {
   BasicOutputVerifier,
@@ -60,6 +61,7 @@ export interface RuntimeRunServiceOptions {
 
 export class RuntimeRunService {
   readonly #store: SqliteEventStore;
+  readonly #knowledgeLibrary: RuntimeKnowledgeLibrary;
   readonly #workingDirectory: string;
   readonly #onEvent: RuntimeRunServiceOptions["onEvent"];
   readonly #createModel: NonNullable<RuntimeRunServiceOptions["createModel"]>;
@@ -99,10 +101,22 @@ export class RuntimeRunService {
         );
       },
     });
+    this.#knowledgeLibrary = new RuntimeKnowledgeLibrary({
+      workingDirectory: options.workingDirectory,
+      databaseFileName: runtimeHostConfig.knowledge.databaseFileName,
+      listLimit: runtimeHostConfig.knowledge.listLimit,
+    });
   }
 
   async handle(request: RuntimeRpcRequest): Promise<RuntimeRpcResponse> {
     if (request.method === "runtime.run.cancel") return this.#cancel(request);
+    if (
+      request.method === "runtime.kb.state" ||
+      request.method === "runtime.kb.add_file" ||
+      request.method === "runtime.kb.remove"
+    ) {
+      return await this.#handleKnowledge(request);
+    }
     if (request.method !== "runtime.run.start") {
       if (request.method === "runtime.shutdown") {
         const activeRun = this.#activeRun;
@@ -190,8 +204,48 @@ export class RuntimeRunService {
     });
   }
 
+  async #handleKnowledge(
+    request: Extract<
+      RuntimeRpcRequest,
+      { method: "runtime.kb.state" | "runtime.kb.add_file" | "runtime.kb.remove" }
+    >,
+  ): Promise<RuntimeRpcResponse> {
+    try {
+      if (request.method === "runtime.kb.state") {
+        return runtimeRpcResponseSchema.parse({
+          protocolVersion: 1,
+          requestId: request.requestId,
+          ok: true,
+          result: this.#knowledgeLibrary.state(),
+        });
+      }
+      if (request.method === "runtime.kb.add_file") {
+        return runtimeRpcResponseSchema.parse({
+          protocolVersion: 1,
+          requestId: request.requestId,
+          ok: true,
+          result: await this.#knowledgeLibrary.addFile(request.params.path),
+        });
+      }
+      const removed = this.#knowledgeLibrary.remove(request.params.documentId);
+      return runtimeRpcResponseSchema.parse({
+        protocolVersion: 1,
+        requestId: request.requestId,
+        ok: true,
+        result: { removed, state: this.#knowledgeLibrary.state() },
+      });
+    } catch (error) {
+      return errorResponse(
+        request.requestId,
+        "knowledge_operation_failed",
+        error instanceof Error ? error.message : "Knowledge operation failed",
+      );
+    }
+  }
+
   close(): void {
     this.#store.close();
+    this.#knowledgeLibrary.close();
   }
 }
 

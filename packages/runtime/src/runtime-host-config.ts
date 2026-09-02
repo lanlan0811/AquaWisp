@@ -14,6 +14,12 @@ const runtimeHostConfigSchema = z
     databaseFileName: safeFileNameSchema,
     maximumCycles: z.number().int().positive(),
     streamRecovery: z.object({ maximumAttempts: z.number().int().nonnegative().max(3) }).strict(),
+    knowledge: z
+      .object({
+        databaseFileName: safeFileNameSchema,
+        listLimit: z.number().int().positive().max(10_000),
+      })
+      .strict(),
     context: z
       .object({
         checkpointDirectoryName: safeFileNameSchema,
@@ -34,7 +40,10 @@ const runtimeHostConfigSchema = z
         "Context recent and summary budgets must fit inside maxTokens",
       ),
   })
-  .strict();
+  .strict()
+  .refine(({ databaseFileName, knowledge }) => databaseFileName !== knowledge.databaseFileName, {
+    message: "Runtime event and knowledge databases must use different files",
+  });
 
 export const runtimeHostConfig = runtimeHostConfigSchema.parse(source);
 export type RuntimeHostConfig = z.infer<typeof runtimeHostConfigSchema>;
