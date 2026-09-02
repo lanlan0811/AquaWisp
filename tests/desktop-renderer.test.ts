@@ -31,12 +31,16 @@ describe("M5 design-system desktop renderer", () => {
         sessionId: "session-mode",
         userInput: "检索知识库",
         mode: "full_access",
+        modelId: "glm-5.3",
+        reasoningLevel: "max",
       }),
     ).toMatchObject({ mode: "full_access" });
     expect(() =>
       desktopConversationStartRequestSchema.parse({
         sessionId: "session-mode",
         userInput: "检索知识库",
+        modelId: "glm-5.3",
+        reasoningLevel: "max",
       }),
     ).toThrow();
   });
@@ -61,6 +65,8 @@ describe("M5 design-system desktop renderer", () => {
     expect(markup).toContain('data-session-mode="plan"');
     expect(markup).toContain('data-session-mode="work"');
     expect(markup).toContain('data-session-mode="full_access"');
+    expect(markup).toContain("data-session-model");
+    expect(markup).toContain("data-session-reasoning");
     expect(markup).toContain("data-full-access-dialog");
     expect(markup).toContain("完全访问仅能在会话中确认后临时启用");
     const defaultModeSelect = /<select name="mode">(?<options>.*?)<\/select>/u.exec(markup);
@@ -73,7 +79,9 @@ describe("M5 design-system desktop renderer", () => {
     expect(desktopRendererScript).toContain("api.settings.set");
     expect(desktopRendererScript).toContain("api.secrets.has");
     expect(desktopRendererScript).toContain("api.conversation.start");
-    expect(desktopRendererScript).toContain("{ sessionId, userInput, mode: sessionMode }");
+    expect(desktopRendererScript).toContain("modelId: sessionModelSelect.value");
+    expect(desktopRendererScript).toContain("reasoningLevel: sessionReasoningSelect.value");
+    expect(desktopRendererScript).toContain("rebuildSessionModels(settings)");
     expect(desktopRendererScript).toContain("button.disabled = nextRunning");
     expect(desktopRendererScript).toContain('fullAccessDialog.returnValue === "enable"');
     expect(desktopRendererScript).toContain("api.conversation.cancel");

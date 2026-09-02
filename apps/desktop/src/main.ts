@@ -39,6 +39,7 @@ import { createRuntimeEnvironment, desktopConfig } from "./desktop-config.js";
 import { browserTabs, registerBrowserTab, validateWebviewSource } from "./browser-host.js";
 import { createDesktopDocument } from "./renderer/ui.js";
 import { RuntimeProcessClient } from "./runtime-client.js";
+import { resolveDesktopRunSelection } from "./run-selection.js";
 import { SecretVault } from "./secret-vault.js";
 import { DesktopSettingsStore } from "./settings-store.js";
 
@@ -249,6 +250,7 @@ function registerDesktopIpc(secretVault: SecretVault, settingsStore: DesktopSett
     if (runtime === undefined) throw new Error("Runtime is not connected");
     const request = desktopConversationStartRequestSchema.parse(input);
     const settings = await settingsStore.get();
+    const selection = resolveDesktopRunSelection(settings, request);
     const apiKey = await secretVault.get(settings.secretName);
     if (apiKey === undefined) throw new Error("Selected provider API key is not configured");
     const response = await runtime.request(
@@ -256,10 +258,7 @@ function registerDesktopIpc(secretVault: SecretVault, settingsStore: DesktopSett
         method: "runtime.run.start",
         params: {
           ...request,
-          providerId: settings.providerId,
-          modelId: settings.modelId,
-          protocol: settings.protocol,
-          reasoningLevel: settings.reasoningLevel,
+          ...selection,
           mode: request.mode,
           apiKey,
         },

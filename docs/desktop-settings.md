@@ -7,6 +7,7 @@
 API key 仍只进入 `SecretVault` 和 Electron `safeStorage`，不会出现在 `settings.json`。sandbox preload 仅暴露 `secrets.set/has/delete`，没有 `get` 或 `decrypt`；设置页保存 key 后立即清空密码输入框，只显示“已保存”状态。
 
 设置页使用内置模型目录联动 provider、model、协议和思考强度。默认执行模式只能选择“计划 / 工作”；“完全访问”只能在会话输入卡中经高风险确认后临时启用，契约和存储边界都拒绝将它持久化。renderer 脚本由每窗口一次性 nonce 授权；CSP 不允许无 nonce 的内联脚本。
+会话输入卡可在当前 provider 与协议范围内临时切换模型和思考档位，不会覆盖设置中的默认值。更换 provider 或协议并保存后，会话选项会从模型目录重建，不保留失效选项。
 
 早期版本如已将 `full_access` 写入设置，读取时会安全降级为当前配置的默认模式，避免升级后无法启动，也不会在未确认时保留高权限。
 

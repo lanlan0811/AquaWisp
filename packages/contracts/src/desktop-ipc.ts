@@ -31,6 +31,8 @@ export const desktopConversationStartRequestSchema = z
     sessionId: entityIdSchema,
     userInput: z.string().min(1).max(1_048_576),
     mode: desktopSessionModeSchema,
+    modelId: entityIdSchema,
+    reasoningLevel: entityIdSchema,
   })
   .strict();
 export const desktopConversationCancelRequestSchema = z.object({ runId: entityIdSchema }).strict();
