@@ -21,7 +21,7 @@ export function createDesktopDocument(state: DesktopViewState, scriptNonce: stri
   if (!/^[A-Za-z0-9+/=]{16,128}$/u.test(scriptNonce)) {
     throw new Error("Desktop script nonce must be a non-empty base64 value");
   }
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${scriptNonce}'"><title>沧渡 AquaWisp</title><style>${desktopStyles}${knowledgeStyles}${sourceStyles}${approvalStyles}</style></head><body>${createDesktopMarkup(state)}<script nonce="${scriptNonce}">${desktopRendererScript}</script></body></html>`;
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${scriptNonce}'"><title>沧渡 AquaWisp</title><style>${desktopStyles}${knowledgeStyles}${sourceStyles}${actionStyles}${approvalStyles}</style></head><body>${createDesktopMarkup(state)}<script nonce="${scriptNonce}">${desktopRendererScript}</script></body></html>`;
 }
 export function createDesktopMarkup(state: DesktopViewState): string {
   const modeDefinitions = desktopConfig.executionModes;
@@ -46,7 +46,7 @@ export function createDesktopMarkup(state: DesktopViewState): string {
   const browserBody = state.browserVisible
     ? `<section class="right-body browser-body" data-right-body="browser" hidden><div class="browser-address"><input aria-label="浏览器地址" value="about:blank" readonly></div><webview src="about:blank"></webview></section>`
     : "";
-  const rightPanel = `<aside class="right-panel"><div class="right-tabs"><button class="right-tab active" data-right-tab="sources">${icon("source")}<span>来源</span><small data-source-count>0</small></button>${browserTab}<button class="right-tab" data-right-tab="artifacts">${icon("artifact")}<span>工件</span></button></div><section class="right-body source-body" data-right-body="sources"><p class="right-section-title">检索来源</p><div class="source-list" data-source-list></div><div class="right-empty" data-source-empty>${icon("source")}<p>让沧渡检索知识库后，命中内容会显示在这里。</p></div></section>${browserBody}<section class="right-body" data-right-body="artifacts" hidden><div class="right-empty">${icon("artifact")}<p>运行产生的工件会显示在这里。</p></div></section><template data-source-icon="file">${icon("file")}</template><template data-source-icon="web">${icon("web")}</template><template data-source-icon="manual">${icon("manual")}</template></aside>`;
+  const rightPanel = `<aside class="right-panel"><div class="right-tabs"><button class="right-tab active" data-right-tab="sources">${icon("source")}<span>来源</span><small data-source-count>0</small></button>${browserTab}<button class="right-tab" data-right-tab="artifacts">${icon("artifact")}<span>工件</span></button></div><section class="right-body source-body" data-right-body="sources"><p class="right-section-title">检索来源</p><div class="source-list" data-source-list></div><div class="right-empty" data-source-empty>${icon("source")}<p>让沧渡检索知识库后，命中内容会显示在这里。</p></div></section>${browserBody}<section class="right-body" data-right-body="artifacts" hidden><div class="right-empty">${icon("artifact")}<p>运行产生的工件会显示在这里。</p></div></section><template data-source-icon="file">${icon("file")}</template><template data-source-icon="web">${icon("web")}</template><template data-source-icon="manual">${icon("manual")}</template><template data-action-icon="file">${icon("file")}</template><template data-action-icon="search">${icon("search")}</template><template data-action-icon="write">${icon("write")}</template><template data-action-icon="terminal">${icon("terminal")}</template><template data-action-icon="browser">${icon("browser")}</template><template data-action-icon="generic">${icon("action")}</template><template data-action-state-icon="progress">${icon("progress")}</template><template data-action-state-icon="verified">${icon("check")}</template><template data-action-state-icon="warning">${icon("warning")}</template></aside>`;
   const providers = builtInModelCatalog.providers
     .map(
       (provider) =>
@@ -86,8 +86,10 @@ export const desktopStyles = `:root{--brand:#0e7490;--brand-weak:#e0f2f7;--send:
 const knowledgeStyles = `.knowledge-summary{box-sizing:border-box;max-width:860px;margin:24px auto 12px;padding:16px;display:flex;align-items:center;gap:24px;border:1px solid var(--border);border-radius:12px;background:var(--side)}.knowledge-summary div{display:grid;min-width:84px}.knowledge-summary strong{font-size:20px;color:var(--brand)}.knowledge-summary span,.knowledge-summary p{font-size:12px;color:var(--weak)}.knowledge-summary p{margin:0 0 0 auto}.knowledge-list{box-sizing:border-box;max-width:860px;margin:0 auto 24px;display:grid;gap:12px}.knowledge-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;padding:16px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}.knowledge-card h2{margin:0;font-size:14px;font-weight:600;overflow-wrap:anywhere}.knowledge-card-meta{margin:0;color:var(--weak);font-size:12px}.knowledge-card-uri{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--weak);font-size:12px}.knowledge-card .remove-source{grid-column:2;grid-row:1/4;align-self:center;border:1px solid var(--danger);border-radius:6px;background:transparent;color:var(--danger);padding:7px 12px}.knowledge-card .remove-source:hover{background:var(--danger);color:#fff}.knowledge-view .empty-state{margin-top:12vh}.knowledge-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(440px,calc(100% - 32px));border:1px solid var(--danger);border-radius:12px;padding:24px;color:var(--text)}.knowledge-dialog::backdrop{background:rgba(0,0,0,.4)}.knowledge-dialog h2{margin:0 0 8px;font-size:20px}.knowledge-dialog p{margin:0 0 16px;line-height:1.6}.knowledge-dialog menu{display:flex;justify-content:flex-end;gap:12px;margin:0;padding:0}.knowledge-dialog button{border-radius:6px;padding:8px 16px}.knowledge-dialog [value=cancel]{border:1px solid var(--border);background:var(--surface)}.knowledge-dialog [value=confirm]{border:0;background:var(--danger);color:#fff}@media(max-width:1080px){.knowledge-summary,.knowledge-list{margin-left:24px;margin-right:24px}.knowledge-summary{align-items:flex-start;flex-wrap:wrap}.knowledge-summary p{flex-basis:100%;margin:0}}`;
 export const sourceStyles = `.right-panel{box-sizing:border-box;width:280px;height:100vh;flex:none;border-left:1px solid var(--border);background:var(--side);display:flex;flex-direction:column}.right-tabs{height:44px;box-sizing:border-box;border-bottom:1px solid var(--border);display:flex}.right-tab{position:relative;min-width:0;flex:1;border:0;background:transparent;color:var(--weak);display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px}.right-tab.active{color:var(--brand);font-weight:600}.right-tab.active::after{content:"";position:absolute;inset:auto 10px 0;height:2px;background:var(--brand)}.right-tab small{min-width:16px;border-radius:9999px;background:var(--border);font-size:10px}.right-body{min-height:0;flex:1;overflow:auto}.right-section-title{margin:12px 12px 8px;color:var(--weak);font-size:12px}.right-empty{box-sizing:border-box;padding:64px 20px;text-align:center;color:var(--weak);font-size:12px;line-height:1.6}.right-empty svg{width:28px;height:28px}.source-list{display:grid;gap:8px;padding:0 8px 12px}.source-card{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:10px;text-align:left;display:grid;grid-template-columns:20px minmax(0,1fr);gap:5px 8px;color:var(--text)}.source-card:hover,.source-card:focus-visible{border-color:var(--brand)}.source-card>svg{grid-row:1/4;color:var(--brand)}.source-card strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.source-card small{color:var(--weak)}.source-card .source-preview{grid-column:2;margin:0;display:-webkit-box;overflow:hidden;-webkit-line-clamp:3;-webkit-box-orient:vertical;color:var(--weak);font-size:12px;line-height:1.5}.source-card mark{background:var(--brand-weak);color:inherit}.message-sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.message-source{border:0;border-radius:9999px;background:var(--side);color:var(--brand);padding:4px 8px;font-size:12px;display:flex;align-items:center;gap:4px}.message-source svg{width:14px;height:14px}.browser-body{display:flex;flex-direction:column}.browser-address{padding:8px;border-bottom:1px solid var(--border)}.browser-address input{box-sizing:border-box;width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 8px}.browser-body webview{flex:1;min-height:480px}.source-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(680px,calc(100% - 32px));max-height:calc(100vh - 32px);overflow:auto;border:1px solid var(--border);border-radius:12px;padding:24px;background:var(--surface);color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.12)}.source-dialog::backdrop{background:rgba(0,0,0,.4)}.source-dialog header{display:flex;justify-content:space-between;gap:16px}.source-dialog header span{color:var(--weak);font-size:12px}.source-dialog h2{margin:4px 0 0;font-size:20px}.source-dialog header button{width:32px;height:32px;border:0;border-radius:6px;background:transparent}.source-dialog dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 20px;margin:20px 0;padding:16px;border:1px solid var(--border);border-radius:6px}.source-dialog dl div{min-width:0}.source-dialog dt{color:var(--weak);font-size:12px}.source-dialog dd{margin:4px 0 0;overflow-wrap:anywhere;font-size:13px}.source-dialog [data-source-detail-uri]{font-family:ui-monospace,Consolas,"Cascadia Mono",monospace}.source-dialog>form>p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}@media(max-width:1080px){.right-panel{width:240px}}`;
 const approvalStyles = `.approval-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(480px,calc(100% - 32px));max-height:calc(100vh - 32px);overflow:auto;border:1px solid var(--danger);border-radius:12px;padding:24px;background:var(--surface);color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.12)}.approval-dialog::backdrop{background:rgba(0,0,0,.4)}.approval-heading{display:flex;align-items:flex-start;gap:12px}.approval-heading>svg{width:40px;height:40px;flex:none;color:var(--danger)}.approval-heading h2{margin:0;font-size:20px}.approval-heading p{margin:4px 0 0;color:var(--weak)}.approval-dialog dl{display:grid;gap:8px;margin:16px 0;padding:16px;border:1px solid var(--border);border-radius:6px;background:var(--side)}.approval-dialog dl div{display:grid;grid-template-columns:112px minmax(0,1fr);gap:8px}.approval-dialog dt{color:var(--weak)}.approval-dialog dd{margin:0;overflow-wrap:anywhere}.approval-remember{display:flex;align-items:flex-start;gap:8px;line-height:1.5}.approval-remember input{width:16px;height:16px;margin-top:3px;accent-color:var(--brand);flex:none}.approval-error{min-height:20px;margin:8px 0 0;color:var(--danger);font-size:12px}.approval-dialog menu{display:flex;justify-content:flex-end;gap:12px;margin:8px 0 0;padding:0}.approval-dialog button{border-radius:6px;padding:8px 16px;font-weight:600}.approval-deny{border:1px solid var(--danger);background:transparent;color:var(--danger)}.approval-deny:hover{background:var(--danger);color:#fff}.approval-approve{border:0;background:var(--brand);color:#fff}.approval-dialog button:focus-visible,.approval-remember input:focus-visible{outline:2px solid var(--brand);outline-offset:2px}.full-access-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(500px,calc(100% - 32px));max-height:calc(100vh - 32px);overflow:auto;border:1px solid var(--danger);border-radius:12px;padding:24px;background:var(--surface);color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.12)}.full-access-dialog::backdrop{background:rgba(0,0,0,.4)}.full-access-impact{margin:18px 0;padding:16px;border:1px solid var(--border);border-radius:6px;background:var(--side)}.full-access-impact p{margin:8px 0 0;color:var(--weak);line-height:1.6}.full-access-dialog menu{display:flex;justify-content:flex-end;gap:12px;margin:0;padding:0}.full-access-dialog button{border-radius:6px;padding:8px 16px;font-weight:600}.full-access-dialog [value=cancel]{border:1px solid var(--border);background:var(--surface)}.full-access-dialog [value=enable]{border:0;background:var(--danger);color:#fff}`;
+export const actionStyles = `.message-actions{--ledger-planned:#6b7280;--ledger-authorized:#2563eb;--ledger-dispatched:#0891b2;--ledger-observed:#7c3aed;--ledger-verified:#15803d;--ledger-unknown:#ea580c;display:grid;gap:8px;margin-top:8px}.action-card{border:1px solid var(--border);border-radius:6px;background:var(--surface);overflow:hidden}.action-card[data-action-state=unknown]{border-color:var(--ledger-unknown)}.action-card[data-action-state=denied]{border-color:var(--danger)}.action-card summary{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;list-style:none}.action-card summary::-webkit-details-marker{display:none}.action-card summary>svg{color:var(--brand)}.action-summary{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.action-state{display:inline-flex;align-items:center;gap:4px;border-radius:9999px;padding:3px 7px;color:var(--action-state-color);background:color-mix(in srgb,var(--action-state-color) 9%,transparent);font-size:11px}.action-state svg{width:13px;height:13px}.action-card[data-action-state=planned]{--action-state-color:var(--ledger-planned)}.action-card[data-action-state=authorized]{--action-state-color:var(--ledger-authorized)}.action-card[data-action-state=dispatched]{--action-state-color:var(--ledger-dispatched)}.action-card[data-action-state=observed]{--action-state-color:var(--ledger-observed)}.action-card[data-action-state=verified]{--action-state-color:var(--ledger-verified)}.action-card[data-action-state=unknown]{--action-state-color:var(--ledger-unknown)}.action-card[data-action-state=denied]{--action-state-color:var(--danger)}.action-detail{border-top:1px solid var(--border);padding:10px 12px;background:var(--side)}.action-detail pre{max-height:180px;overflow:auto;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.5 ui-monospace,Consolas,"Cascadia Mono",monospace;color:var(--weak)}.action-timeline{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:8px;color:var(--weak);font-size:11px}.action-timeline span:not(:last-child)::after{content:"→";margin-left:5px;color:var(--border)}}`;
 export const desktopRendererScript = `(() => {
   const modeDefinitions = ${escapeJsonForScript(desktopConfig.executionModes)};
+  const actionLedgerConfig = ${escapeJsonForScript(desktopConfig.actionLedger)};
   const api = window.aquawisp;
   const form = document.querySelector("[data-settings-form]");
   const provider = form?.elements.namedItem("providerId");
@@ -268,6 +270,82 @@ export const desktopRendererScript = `(() => {
     const template = document.querySelector('[data-source-icon="' + sourceType + '"]');
     return template instanceof HTMLTemplateElement ? template.content.cloneNode(true) : document.createTextNode("");
   };
+  const actionIcon = (iconName) => {
+    const template = document.querySelector('[data-action-icon="' + iconName + '"]');
+    return template instanceof HTMLTemplateElement ? template.content.cloneNode(true) : document.createTextNode("");
+  };
+  const actionStateIcon = (state) => {
+    const iconName = state === "verified" ? "verified" : state === "unknown" || state === "denied" ? "warning" : "progress";
+    const template = document.querySelector('[data-action-state-icon="' + iconName + '"]');
+    return template instanceof HTMLTemplateElement ? template.content.cloneNode(true) : document.createTextNode("");
+  };
+  const stringifyActionDetail = (value) => {
+    const serialized = JSON.stringify(value, null, 2) ?? String(value);
+    const limit = actionLedgerConfig.maximumDetailCharacters;
+    return serialized.length > limit ? serialized.slice(0, limit) + "\\n…已截断" : serialized;
+  };
+  const summarizeAction = (action) => {
+    const field = actionLedgerConfig.summaryFields.find((name) => typeof action.input[name] === "string" && action.input[name].trim());
+    return field ? action.toolName + " · " + action.input[field] : action.toolName;
+  };
+  const attachActionCard = (detail) => {
+    if (!(activeAssistant instanceof HTMLParagraphElement)) return;
+    const body = activeAssistant.parentElement;
+    if (!(body instanceof HTMLElement)) return;
+    let container = body.querySelector(".message-actions");
+    if (!(container instanceof HTMLElement)) {
+      container = document.createElement("div");
+      container.className = "message-actions";
+      body.append(container);
+    }
+    const card = document.createElement("details");
+    card.className = "action-card";
+    card.dataset.actionId = detail.action.id;
+    detail.element = card;
+    container.append(card);
+  };
+  const renderActionCard = (detail) => {
+    const card = detail.element;
+    if (!(card instanceof HTMLDetailsElement)) return;
+    const wasOpen = card.open;
+    card.dataset.actionState = detail.state;
+    const summary = document.createElement("summary");
+    const iconName = actionLedgerConfig.toolIcons.find(({ toolName }) => toolName === detail.action.toolName)?.icon ?? "generic";
+    summary.append(actionIcon(iconName));
+    const title = document.createElement("span");
+    title.className = "action-summary";
+    title.textContent = summarizeAction(detail.action);
+    const badge = document.createElement("span");
+    badge.className = "action-state";
+    badge.append(actionStateIcon(detail.state));
+    const badgeLabel = document.createElement("span");
+    badgeLabel.textContent = actionLedgerConfig.states.find(({ id }) => id === detail.state)?.label ?? detail.state;
+    badge.append(badgeLabel);
+    summary.append(title, badge);
+    const detailBody = document.createElement("div");
+    detailBody.className = "action-detail";
+    const payload = document.createElement("pre");
+    payload.textContent = stringifyActionDetail({ input: detail.action.input, authorization: detail.authorization, approval: detail.approval, observation: detail.observation, verification: detail.verification, reason: detail.reason });
+    const timeline = document.createElement("div");
+    timeline.className = "action-timeline";
+    for (const state of detail.timeline) {
+      const item = document.createElement("span");
+      item.textContent = actionLedgerConfig.states.find(({ id }) => id === state)?.label ?? state;
+      timeline.append(item);
+    }
+    detailBody.append(payload, timeline);
+    card.replaceChildren(summary, detailBody);
+    card.open = wasOpen;
+  };
+  const updateActionCard = (actionId, state, extra = {}) => {
+    const detail = actionDetails.get(actionId);
+    if (!detail) return undefined;
+    detail.state = state;
+    if (detail.timeline.at(-1) !== state) detail.timeline.push(state);
+    Object.assign(detail, extra);
+    renderActionCard(detail);
+    return detail;
+  };
   const appendHighlighted = (container, content, query) => {
     const normalizedQuery = typeof query === "string" ? query.trim() : "";
     const start = normalizedQuery === "" ? -1 : content.toLocaleLowerCase().indexOf(normalizedQuery.toLocaleLowerCase());
@@ -361,12 +439,37 @@ export const desktopRendererScript = `(() => {
     if (!running || runEvent.runId !== activeRunId) return;
     if (runEvent.type === "action.planned") {
       const action = runEvent.payload.action;
-      actionDetails.set(action.id, { toolName: action.toolName, query: typeof action.input.query === "string" ? action.input.query : "" });
+      const detail = { action, toolName: action.toolName, query: typeof action.input.query === "string" ? action.input.query : "", state: "planned", timeline: ["planned"] };
+      actionDetails.set(action.id, detail);
+      attachActionCard(detail);
+      renderActionCard(detail);
+    } else if (runEvent.type === "action.authorized") {
+      updateActionCard(runEvent.payload.actionId, "authorized", { authorization: runEvent.payload.decision });
+    } else if (runEvent.type === "action.denied") {
+      updateActionCard(runEvent.payload.actionId, "denied", { authorization: runEvent.payload.decision });
+    } else if (runEvent.type === "action.dispatched") {
+      updateActionCard(runEvent.payload.actionId, "dispatched");
     } else if (runEvent.type === "action.observed") {
       const action = actionDetails.get(runEvent.payload.actionId);
+      updateActionCard(runEvent.payload.actionId, "observed", { observation: runEvent.payload.observation });
       if (action?.toolName === "kb.search") collectSources(runEvent.payload.observation, action);
+    } else if (runEvent.type === "action.verified") {
+      updateActionCard(runEvent.payload.actionId, "verified", { verification: runEvent.payload.verification });
+    } else if (runEvent.type === "action.unknown") {
+      updateActionCard(runEvent.payload.actionId, "unknown", { reason: runEvent.payload.reason });
     } else if (runEvent.type === "approval.required") {
+      const action = actionDetails.get(runEvent.payload.request.actionId);
+      if (action) {
+        action.approval = runEvent.payload.request;
+        renderActionCard(action);
+      }
       showApproval(runEvent.payload.request);
+    } else if (runEvent.type === "approval.resolved") {
+      const action = actionDetails.get(runEvent.payload.resolution.actionId);
+      if (action) {
+        action.approval = runEvent.payload.resolution;
+        renderActionCard(action);
+      }
     } else if (runEvent.type === "model.delta") {
       if (!(activeAssistant instanceof HTMLParagraphElement)) activeAssistant = appendMessage("assistant", "");
       if (activeAssistant instanceof HTMLParagraphElement) activeAssistant.textContent += runEvent.payload.delta;
@@ -636,7 +739,13 @@ function icon(
     | "file"
     | "web"
     | "manual"
-    | "close",
+    | "close"
+    | "search"
+    | "write"
+    | "terminal"
+    | "action"
+    | "progress"
+    | "check",
 ): string {
   const paths = {
     plus: "M12 5v14M5 12h14",
@@ -654,6 +763,12 @@ function icon(
     web: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 0c2.2 2.4 3.3 5.4 3.3 9S14.2 18.6 12 21c-2.2-2.4-3.3-5.4-3.3-9S9.8 5.4 12 3ZM3 12h18",
     manual: "M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4",
     close: "M6 6l12 12M18 6 6 18",
+    search: "m21 21-4.3-4.3M10.8 18a7.2 7.2 0 1 1 0-14.4 7.2 7.2 0 0 1 0 14.4Z",
+    write: "M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4M4 4h6",
+    terminal: "M4 5h16v14H4V5Zm3 4 3 3-3 3m5 0h5",
+    action: "M6 4h12v16H6V4Zm3 5h6m-6 4h6m-6 4h4",
+    progress: "M12 4a8 8 0 1 0 8 8",
+    check: "M5 12l4 4L19 6",
   };
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]}"/></svg>`;
 }

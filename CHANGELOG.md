@@ -46,3 +46,4 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Ledger-linked desktop source citations with validated knowledge metadata, query highlighting, a right-side source panel, and plaintext read-only chunk details.
 - Configuration-driven in-conversation mode controls with Run-time locking, explicit Full Access confirmation, per-session reset, and contract-enforced non-persistence.
 - Catalog-driven per-session model and reasoning selectors with main-process provider/protocol validation, alias normalization, Run-time locking, and safe default restoration.
+- Expandable desktop action cards that render the complete runtime ledger progression, approval context, bounded plaintext details, and explicit unknown/denied outcomes.

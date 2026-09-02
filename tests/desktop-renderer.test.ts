@@ -3,6 +3,7 @@ import { Script } from "node:vm";
 import {
   createDesktopDocument,
   createDesktopMarkup,
+  actionStyles,
   desktopRendererScript,
   desktopStyles,
   sourceStyles,
@@ -62,6 +63,8 @@ describe("M5 design-system desktop renderer", () => {
     expect(markup).toContain('data-right-tab="sources"');
     expect(markup).toContain("data-source-list");
     expect(markup).toContain("data-source-detail-content");
+    expect(markup).toContain('data-action-icon="terminal"');
+    expect(markup).toContain('data-action-state-icon="verified"');
     expect(markup).toContain('data-session-mode="plan"');
     expect(markup).toContain('data-session-mode="work"');
     expect(markup).toContain('data-session-mode="full_access"');
@@ -93,6 +96,13 @@ describe("M5 design-system desktop renderer", () => {
     expect(desktopRendererScript).toContain('runEvent.type === "approval.required"');
     expect(desktopRendererScript).toContain('runEvent.type === "action.planned"');
     expect(desktopRendererScript).toContain('runEvent.type === "action.observed"');
+    expect(desktopRendererScript).toContain('runEvent.type === "action.authorized"');
+    expect(desktopRendererScript).toContain('runEvent.type === "action.dispatched"');
+    expect(desktopRendererScript).toContain('runEvent.type === "action.verified"');
+    expect(desktopRendererScript).toContain('runEvent.type === "action.unknown"');
+    expect(desktopRendererScript).toContain("renderActionCard(detail)");
+    expect(desktopRendererScript).toContain("payload.textContent = stringifyActionDetail");
+    expect(desktopRendererScript).not.toContain("payload.innerHTML");
     expect(desktopRendererScript).toContain('action?.toolName === "kb.search"');
     expect(desktopRendererScript).toContain("sourceList.replaceChildren");
     expect(desktopRendererScript).not.toContain("sourceList.innerHTML");
@@ -120,5 +130,7 @@ describe("M5 design-system desktop renderer", () => {
     expect(desktopStyles).toContain("border-radius:12px");
     expect(desktopStyles).toContain("--send:#34b3a0");
     expect(sourceStyles).toContain("width:280px");
+    expect(actionStyles).toContain("--ledger-verified:#15803d");
+    expect(actionStyles).toContain("data-action-state=unknown");
   });
 });

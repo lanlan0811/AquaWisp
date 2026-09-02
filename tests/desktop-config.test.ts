@@ -17,6 +17,22 @@ describe("M5 desktop configuration", () => {
     ).toMatchObject({ canBeDefault: true });
   });
 
+  it("registers action ledger labels, detail bounds, and tool icons", () => {
+    expect(desktopConfig.actionLedger.states.map(({ id }) => id)).toEqual([
+      "planned",
+      "authorized",
+      "dispatched",
+      "observed",
+      "verified",
+      "unknown",
+      "denied",
+    ]);
+    expect(desktopConfig.actionLedger.maximumDetailCharacters).toBeGreaterThan(0);
+    expect(
+      desktopConfig.actionLedger.toolIcons.find(({ toolName }) => toolName === "terminal.execute"),
+    ).toMatchObject({ icon: "terminal" });
+  });
+
   it("inherits only registered environment names and enables Electron Node mode", () => {
     const environment = createRuntimeEnvironment(
       {

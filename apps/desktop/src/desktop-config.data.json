@@ -48,6 +48,32 @@
       "requiresConfirmation": true
     }
   ],
+  "actionLedger": {
+    "maximumDetailCharacters": 4096,
+    "summaryFields": ["path", "url", "query", "pattern", "executable", "documentId"],
+    "states": [
+      { "id": "planned", "label": "已计划" },
+      { "id": "authorized", "label": "已授权" },
+      { "id": "dispatched", "label": "已派发" },
+      { "id": "observed", "label": "已观察" },
+      { "id": "verified", "label": "已验证" },
+      { "id": "unknown", "label": "待对账" },
+      { "id": "denied", "label": "已拒绝" }
+    ],
+    "toolIcons": [
+      { "toolName": "filesystem.read", "icon": "file" },
+      { "toolName": "filesystem.glob", "icon": "search" },
+      { "toolName": "filesystem.grep", "icon": "search" },
+      { "toolName": "filesystem.write", "icon": "write" },
+      { "toolName": "filesystem.edit", "icon": "write" },
+      { "toolName": "terminal.execute", "icon": "terminal" },
+      { "toolName": "web.fetch", "icon": "browser" },
+      { "toolName": "kb.add", "icon": "write" },
+      { "toolName": "kb.search", "icon": "search" },
+      { "toolName": "kb.list", "icon": "search" },
+      { "toolName": "kb.status", "icon": "search" }
+    ]
+  },
   "settings": {
     "fileName": "settings.json",
     "defaultProviderId": "bigmodel",

@@ -66,6 +66,50 @@ const desktopConfigSchema = z
           ["plan", "work", "full_access"].every((id) => modes.some((mode) => mode.id === id)),
         { message: "Desktop execution modes must define plan, work, and full_access" },
       ),
+    actionLedger: z
+      .object({
+        maximumDetailCharacters: z.number().int().positive().max(65_536),
+        summaryFields: z
+          .array(z.string().min(1).max(64))
+          .min(1)
+          .refine((fields) => new Set(fields).size === fields.length, {
+            message: "Action summary fields must be unique",
+          }),
+        states: z
+          .array(
+            z
+              .object({
+                id: z.enum([
+                  "planned",
+                  "authorized",
+                  "dispatched",
+                  "observed",
+                  "verified",
+                  "unknown",
+                  "denied",
+                ]),
+                label: z.string().min(1).max(32),
+              })
+              .strict(),
+          )
+          .length(7)
+          .refine((states) => new Set(states.map(({ id }) => id)).size === states.length, {
+            message: "Action ledger state ids must be unique",
+          }),
+        toolIcons: z
+          .array(
+            z
+              .object({
+                toolName: z.string().min(1).max(128),
+                icon: z.enum(["file", "search", "write", "terminal", "browser"]),
+              })
+              .strict(),
+          )
+          .refine((tools) => new Set(tools.map(({ toolName }) => toolName)).size === tools.length, {
+            message: "Action ledger tool icon names must be unique",
+          }),
+      })
+      .strict(),
     settings: z
       .object({
         fileName: z.string().min(1),
