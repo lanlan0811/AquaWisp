@@ -1,4 +1,7 @@
 export * from "./chunking.js";
+export * from "./config.js";
+export * from "./embedding-client.js";
+export * from "./hybrid-retriever.js";
 export * from "./knowledge-base.js";
 export * from "./ingestion.js";
 export * from "./rrf.js";

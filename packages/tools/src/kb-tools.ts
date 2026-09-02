@@ -1,5 +1,9 @@
 import type {
+  HybridKnowledgeIndex,
+  HybridSearchRequest,
+  HybridSearchResult,
   KnowledgeBase,
+  KnowledgeChunk,
   KnowledgeBaseStatus,
   KnowledgeDocument,
   KnowledgeDocumentSummary,
@@ -19,6 +23,25 @@ export function createKnowledgeTools(knowledgeBase: KnowledgeBase): KnowledgeToo
       knowledgeBase.add(document);
     },
     search: (query, limit) => knowledgeBase.search(query, limit),
+    list: (limit) => knowledgeBase.list(limit),
+    status: () => knowledgeBase.status(),
+  };
+}
+
+export interface HybridKnowledgeTools {
+  add(document: KnowledgeDocument): Promise<readonly KnowledgeChunk[]>;
+  search(request: HybridSearchRequest): Promise<readonly HybridSearchResult[]>;
+  list(limit: number): readonly KnowledgeDocumentSummary[];
+  status(): KnowledgeBaseStatus;
+}
+
+export function createHybridKnowledgeTools(
+  knowledgeBase: KnowledgeBase,
+  hybridIndex: HybridKnowledgeIndex,
+): HybridKnowledgeTools {
+  return {
+    add: async (document) => await hybridIndex.add(document),
+    search: async (request) => await hybridIndex.search(request),
     list: (limit) => knowledgeBase.list(limit),
     status: () => knowledgeBase.status(),
   };

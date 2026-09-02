@@ -35,6 +35,7 @@ describe("M4 knowledge base FTS", () => {
     expect(kb.list(10)).toEqual([
       expect.objectContaining({ id: "document-1", uri: "file://notes.md", tags: ["中文"] }),
     ]);
+    expect(kb.search('" OR *', 10)).toEqual([]);
     kb.close();
   });
 });

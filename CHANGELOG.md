@@ -30,3 +30,8 @@ All notable changes to AquaWisp are documented here. The format follows [Keep a 
 - Cross-platform argv-based terminal executor with workspace-bound cwd, bounded output, and timeout termination.
 - Protocol-allowlisted, size-bounded `web_fetch` client that labels remote content as untrusted.
 - Workspace-bound glob and grep tools that skip symbolic links, cap results and avoid oversized files.
+- SQLite FTS5 knowledge storage with Chinese pre-segmentation, source metadata, deterministic chunk replacement, and literalized user queries.
+- Persistent `sqlite-vec` indexes with namespace/dimension validation and same-file WAL storage.
+- Bounded Markdown, HTML, DOCX, XLSX, PPTX, and PDF extraction without system Office dependencies.
+- OpenAI-compatible remote or loopback embedding transport with encrypted-key injection boundaries and bounded responses.
+- Incremental FTS/vector indexing plus full-text, semantic, and RRF hybrid search with source attribution and highlights.

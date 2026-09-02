@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 
-import { chunkText, segmentChineseForFts, type ChunkingConfig } from "./chunking.js";
+import { buildFtsQuery, chunkText, segmentChineseForFts, type ChunkingConfig } from "./chunking.js";
 
 export interface KnowledgeBaseOptions {
   readonly databasePath: string;
@@ -19,10 +19,25 @@ export interface KnowledgeDocument {
 export interface KnowledgeSearchResult {
   readonly chunkId: string;
   readonly documentId: string;
+  readonly ordinal: number;
   readonly uri: string;
   readonly title: string;
   readonly content: string;
   readonly score: number;
+}
+export interface KnowledgeChunk {
+  readonly id: string;
+  readonly documentId: string;
+  readonly ordinal: number;
+  readonly uri: string;
+  readonly title: string;
+  readonly content: string;
+}
+export interface PreparedKnowledgeChunk {
+  readonly id: string;
+  readonly documentId: string;
+  readonly ordinal: number;
+  readonly content: string;
 }
 export interface KnowledgeBaseStatus {
   readonly documentCount: number;
@@ -54,10 +69,25 @@ export class KnowledgeBase {
   close(): void {
     this.#database.close();
   }
-  add(document: KnowledgeDocument): void {
+  prepareChunks(
+    document: Pick<KnowledgeDocument, "id" | "content">,
+  ): readonly PreparedKnowledgeChunk[] {
+    if (document.id.trim() === "") throw new Error("Knowledge document ID cannot be empty");
     if (document.content.trim() === "")
       throw new Error("Knowledge document content cannot be empty");
-    const chunks = chunkText(document.content, this.#chunking);
+    return chunkText(document.content, this.#chunking).map((chunk) => ({
+      id: `${document.id}:chunk:${chunk.ordinal.toString()}`,
+      documentId: document.id,
+      ordinal: chunk.ordinal,
+      content: chunk.content,
+    }));
+  }
+  add(document: KnowledgeDocument): readonly KnowledgeChunk[] {
+    const prepared = this.prepareChunks(document).map((chunk) => ({
+      ...chunk,
+      uri: document.uri,
+      title: document.title,
+    }));
     const hash = createHash("sha256").update(document.content).digest("hex");
     this.#transaction(() => {
       this.#database
@@ -85,12 +115,12 @@ export class KnowledgeBase {
       const insertFts = this.#database.prepare(
         "INSERT INTO chunks_fts (chunk_id, content) VALUES (?, ?)",
       );
-      for (const chunk of chunks) {
-        const id = `${document.id}:chunk:${chunk.ordinal.toString()}`;
-        insertChunk.run(id, document.id, chunk.ordinal, chunk.content);
-        insertFts.run(id, segmentChineseForFts(chunk.content));
+      for (const chunk of prepared) {
+        insertChunk.run(chunk.id, document.id, chunk.ordinal, chunk.content);
+        insertFts.run(chunk.id, segmentChineseForFts(chunk.content));
       }
     });
+    return prepared;
   }
   search(query: string, limit: number): readonly KnowledgeSearchResult[] {
     if (query.trim() === "") throw new Error("Knowledge search query cannot be empty");
@@ -98,11 +128,12 @@ export class KnowledgeBase {
       throw new Error("Knowledge search limit must be a positive integer");
     const rows = this.#database
       .prepare(
-        `SELECT chunks.id AS chunk_id, documents.id AS document_id, documents.uri, documents.title, chunks.content, bm25(chunks_fts) AS score FROM chunks_fts JOIN chunks ON chunks.id = chunks_fts.chunk_id JOIN documents ON documents.id = chunks.document_id WHERE chunks_fts MATCH ? ORDER BY score LIMIT ?`,
+        `SELECT chunks.id AS chunk_id, chunks.ordinal, documents.id AS document_id, documents.uri, documents.title, chunks.content, bm25(chunks_fts) AS score FROM chunks_fts JOIN chunks ON chunks.id = chunks_fts.chunk_id JOIN documents ON documents.id = chunks.document_id WHERE chunks_fts MATCH ? ORDER BY score LIMIT ?`,
       )
-      .all(segmentChineseForFts(query), limit) as unknown as {
+      .all(buildFtsQuery(query), limit) as unknown as {
       chunk_id: string;
       document_id: string;
+      ordinal: number;
       uri: string;
       title: string;
       content: string;
@@ -111,11 +142,34 @@ export class KnowledgeBase {
     return rows.map((row) => ({
       chunkId: row.chunk_id,
       documentId: row.document_id,
+      ordinal: row.ordinal,
       uri: row.uri,
       title: row.title,
       content: row.content,
       score: row.score,
     }));
+  }
+  chunk(id: string): KnowledgeChunk | undefined {
+    if (id.trim() === "") throw new Error("Knowledge chunk ID cannot be empty");
+    const row = this.#database
+      .prepare(
+        `SELECT chunks.id, chunks.document_id, chunks.ordinal, documents.uri, documents.title, chunks.content
+         FROM chunks JOIN documents ON documents.id = chunks.document_id
+         WHERE chunks.id = ?`,
+      )
+      .get(id) as ChunkRow | undefined;
+    return row === undefined ? undefined : mapChunk(row);
+  }
+  chunks(documentId: string): readonly KnowledgeChunk[] {
+    if (documentId.trim() === "") throw new Error("Knowledge document ID cannot be empty");
+    const rows = this.#database
+      .prepare(
+        `SELECT chunks.id, chunks.document_id, chunks.ordinal, documents.uri, documents.title, chunks.content
+         FROM chunks JOIN documents ON documents.id = chunks.document_id
+         WHERE chunks.document_id = ? ORDER BY chunks.ordinal ASC`,
+      )
+      .all(documentId) as unknown as ChunkRow[];
+    return rows.map(mapChunk);
   }
   status(): KnowledgeBaseStatus {
     const documents = this.#database.prepare("SELECT count(*) AS count FROM documents").get() as {
@@ -161,4 +215,24 @@ export class KnowledgeBase {
       throw error;
     }
   }
+}
+
+interface ChunkRow {
+  readonly id: string;
+  readonly document_id: string;
+  readonly ordinal: number;
+  readonly uri: string;
+  readonly title: string;
+  readonly content: string;
+}
+
+function mapChunk(row: ChunkRow): KnowledgeChunk {
+  return {
+    id: row.id,
+    documentId: row.document_id,
+    ordinal: row.ordinal,
+    uri: row.uri,
+    title: row.title,
+    content: row.content,
+  };
 }

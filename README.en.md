@@ -55,6 +55,7 @@ See [Secret storage and IPC boundary](docs/secrets.en.md) for operating-system e
 See [Visible browser host](docs/browser-host.en.md) for the embedded webview and CDP security boundary.
 See [Persistent SQLite vector index](docs/sqlite-vector.en.md) for the same-file `sqlite-vec` backend.
 See [Local file ingestion](docs/ingestion.en.md) for Office/PDF extraction and resource boundaries.
+See [Hybrid retrieval and embeddings](docs/hybrid-retrieval.en.md) for RRF, source highlights, and embedding data boundaries.
 
 ## Contributing and security
 

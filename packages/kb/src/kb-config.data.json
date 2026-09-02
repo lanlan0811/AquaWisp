@@ -1,5 +1,23 @@
 {
   "schemaVersion": 1,
   "chunking": { "maximumCharacters": 1200, "overlapCharacters": 160, "minimumCharacters": 80 },
-  "search": { "defaultLimit": 10, "maximumLimit": 50 }
+  "indexing": {
+    "embeddingConcurrency": 4,
+    "embeddingRequestPath": "embeddings",
+    "embeddingTimeoutMs": 60000,
+    "maximumEmbeddingInputCharacters": 32000,
+    "maximumEmbeddingResponseBytes": 8388608,
+    "allowedInsecureEmbeddingHosts": ["localhost", "127.0.0.1", "::1"]
+  },
+  "search": {
+    "defaultLimit": 10,
+    "maximumLimit": 50,
+    "candidateMultiplier": 4,
+    "rankConstant": 60,
+    "ftsWeight": 1,
+    "vectorWeight": 1,
+    "minimumVectorScore": 0.2,
+    "highlightCharacters": 160,
+    "maximumHighlights": 3
+  }
 }

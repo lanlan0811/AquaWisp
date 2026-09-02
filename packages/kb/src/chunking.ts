@@ -41,3 +41,9 @@ export function segmentChineseForFts(text: string): string {
     .map((character) => (/[\u3400-\u9fff]/u.test(character) ? `${character} ` : character))
     .join("");
 }
+
+export function buildFtsQuery(text: string): string {
+  const tokens = segmentChineseForFts(text).match(/[\p{L}\p{N}_]+/gu) ?? [];
+  if (tokens.length === 0) throw new Error("Knowledge search query has no searchable terms");
+  return tokens.map((token) => `"${token}"`).join(" ");
+}

@@ -1,6 +1,6 @@
 export interface EmbeddingProvider {
   readonly dimensions: number;
-  embed(text: string): Promise<readonly number[]>;
+  embed(text: string, signal?: AbortSignal): Promise<readonly number[]>;
 }
 
 export interface VectorMatch {
